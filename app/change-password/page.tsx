@@ -58,7 +58,7 @@ export default function ChangePasswordPage() {
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-2xl font-bold mb-2">비밀번호 변경</h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-900 mb-6">
             보안을 위해 비밀번호를 변경해주세요.
           </p>
 
@@ -93,7 +93,7 @@ export default function ChangePasswordPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">8자 이상</p>
+              <p className="text-sm text-gray-900 mt-1">8자 이상</p>
             </div>
 
             <div>

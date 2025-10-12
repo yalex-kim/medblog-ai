@@ -132,7 +132,7 @@ export default function DashboardPage() {
               <h2 className="text-xl font-semibold mb-2">
                 안녕하세요, {hospitalName}님!
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-900">
                 오늘은 어떤 주제의 블로그 글을 작성하시겠습니까?
               </p>
             </div>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                         <button
                           key={idx}
                           onClick={() => generateBlog(topic)}
-                          className="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                          className="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-gray-900"
                         >
                           {topic}
                         </button>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
                         <button
                           key={idx}
                           onClick={() => generateBlog(topic)}
-                          className="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                          className="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-gray-900"
                         >
                           {topic}
                         </button>

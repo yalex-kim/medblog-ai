@@ -51,7 +51,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-blue-600 mb-2">MedBlog AI</h1>
-          <p className="text-gray-600">병원 블로그 자동 생성</p>
+          <p className="text-gray-900">병원 블로그 자동 생성</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-8">

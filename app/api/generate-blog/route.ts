@@ -30,40 +30,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = `당신은 한국의 산부인과 병원 블로그 전문 작가입니다.
+    // Fetch hospital information
+    let hospitalName = '병원';
+    let hospitalAddress = '';
 
-주제: ${topic}
-키워드: ${keywords || '없음'}
+    if (sessionData) {
+      const { data: hospital } = await supabaseAdmin
+        .from('hospitals')
+        .select('hospital_name, address')
+        .eq('id', sessionData.id)
+        .single();
 
-다음 규칙을 반드시 준수하세요:
-1. 의료법 준수: 과대광고 금지, 단정적 표현 금지
-2. 톤: 따뜻하고 전문적, 환자 입장에서 공감
-3. 구조:
-   - 제목 (궁금증 유발)
-   - 도입부 (공감)
-   - 본문 (3-4개 섹션, 각 섹션은 ## 헤딩으로 시작)
-   - 마무리 (병원 방문 유도, 부드럽게)
-4. 길이: 1500-2000자
-5. 문체: ~입니다 체, 읽기 쉽게
-6. 주의사항은 반드시 포함
-7. 절대 금지: "최고", "유일", "완치", "100%" 등
-
-마지막에 반드시 다음 형식으로 이미지 키워드를 제안하세요:
-
-[이미지 키워드]
-- 키워드1
-- 키워드2
-- 키워드3
-- 키워드4
-- 키워드5`;
+      if (hospital) {
+        hospitalName = hospital.hospital_name || '병원';
+        hospitalAddress = hospital.address || '';
+      }
+    }
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4000,
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 8000,
+      temperature:1,
+      system:"당신은 한국의 병원 블로그 전문 작가입니다.\n\n다음 규칙을 반드시 준수하세요:\n1. 의료법 준수: 과대광고 금지, 단정적 표현 금지\n2. 톤: 따뜻하고 전문적, 환자 입장에서 공감\n3. 구조:\n   - 제목 (궁금증 유발)\n   - 도입부 (공감)\n   - 본문 (3-4개 섹션, 각 섹션은 ## 헤딩으로 시작)\n   - 마무리 (병원 방문 유도, 부드럽게)\n4. 길이: 1500-2000자\n5. 문체: ~입니다 체, 읽기 쉽게 구어체를 조금씩 섞어서(인데요~)\n6. 주의사항은 반드시 포함\n7. 절대 금지: \"최고\", \"유일\", \"완치\", \"100%\" 등\n8. 이미지 제안\n    글 중간에 관련 이미지 및 카드뉴스의 위치 및 내용을 제안. ([] 중괄호로 표시)\n9. Naver SEO 최적화",
+      thinking:{
+          "type": "enabled",
+          "budget_tokens": 10078
+      },
       messages: [
         {
           role: 'user',
-          content: prompt,
+          content:[
+            {
+              "type": "text",
+              "text": `병원 이름 : ${hospitalName}\n병원 위치 : ${hospitalAddress}\n주제 : ${topic}`
+            },
+          ]
         },
       ],
     });

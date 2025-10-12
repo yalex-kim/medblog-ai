@@ -140,7 +140,7 @@ export default function AdminPage() {
                   placeholder="병원에 전달할 초기 비밀번호"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-900 mt-1">
                   * 병원은 첫 로그인 후 비밀번호를 변경할 수 있습니다.
                 </p>
               </div>
