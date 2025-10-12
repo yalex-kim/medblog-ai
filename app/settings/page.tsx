@@ -153,7 +153,7 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSave} className="bg-white rounded-lg shadow-md p-8 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               병원 이름 <span className="text-red-500">*</span>
             </label>
             <input
@@ -166,7 +166,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               진료 과목
             </label>
             <select
@@ -183,7 +183,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               주요 진료 항목 <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2 mb-2">
@@ -223,7 +223,7 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               주소 <span className="text-red-500">*</span>
             </label>
             <input
@@ -241,7 +241,7 @@ export default function SettingsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   플랫폼
                 </label>
                 <select
@@ -254,7 +254,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   블로그 ID <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -267,7 +267,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   블로그 비밀번호 (저장/변경 시에만 입력)
                 </label>
                 <input
@@ -279,7 +279,7 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   게시판 이름 <span className="text-red-500">*</span>
                 </label>
                 <input

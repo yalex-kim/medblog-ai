@@ -117,7 +117,7 @@ export default function AdminPage() {
             <h2 className="text-xl font-semibold mb-4">새 병원 계정 생성</h2>
             <form onSubmit={handleCreateHospital} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   병원 ID (로그인용)
                 </label>
                 <input
@@ -130,7 +130,7 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   초기 비밀번호
                 </label>
                 <input
@@ -146,7 +146,7 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   진료과목
                 </label>
                 <select
@@ -179,9 +179,9 @@ export default function AdminPage() {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">로딩 중...</div>
+            <div className="p-8 text-center text-gray-900">로딩 중...</div>
           ) : hospitals.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-900">
               등록된 병원이 없습니다.
             </div>
           ) : (
@@ -189,19 +189,19 @@ export default function AdminPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
                       병원 ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
                       병원명
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
                       진료과목
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
                       초기 설정
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
                       등록일
                     </th>
                   </tr>
@@ -229,7 +229,7 @@ export default function AdminPage() {
                           {hospital.is_initial_setup_complete ? '완료' : '미완료'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(hospital.created_at).toLocaleDateString('ko-KR')}
                       </td>
                     </tr>

@@ -49,17 +49,13 @@ export async function POST(request: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 8000,
+      max_tokens: 10164,
       temperature:1,
       system:"당신은 한국의 병원 블로그 전문 작가입니다.\n\n다음 규칙을 반드시 준수하세요:\n1. 의료법 준수: 과대광고 금지, 단정적 표현 금지\n2. 톤: 따뜻하고 전문적, 환자 입장에서 공감\n3. 구조:\n   - 제목 (궁금증 유발)\n   - 도입부 (공감)\n   - 본문 (3-4개 섹션, 각 섹션은 ## 헤딩으로 시작)\n   - 마무리 (병원 방문 유도, 부드럽게)\n4. 길이: 1500-2000자\n5. 문체: ~입니다 체, 읽기 쉽게 구어체를 조금씩 섞어서(인데요~)\n6. 주의사항은 반드시 포함\n7. 절대 금지: \"최고\", \"유일\", \"완치\", \"100%\" 등\n8. 이미지 제안\n    글 중간에 관련 이미지 및 카드뉴스의 위치 및 내용을 제안. ([] 중괄호로 표시)\n9. Naver SEO 최적화",
-      thinking:{
-          "type": "enabled",
-          "budget_tokens": 10078
-      },
       messages: [
         {
-          role: 'user',
-          content:[
+          "role": 'user',
+          "content": [
             {
               "type": "text",
               "text": `병원 이름 : ${hospitalName}\n병원 위치 : ${hospitalAddress}\n주제 : ${topic}`
@@ -67,6 +63,10 @@ export async function POST(request: NextRequest) {
           ]
         },
       ],
+      thinking: {
+          "type": "enabled",
+          "budget_tokens": 10078
+      },
     });
 
     const fullContent = message.content[0].type === 'text'
