@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Don't send password hash to client
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...hospitalData } = hospital;
 
     return NextResponse.json({ hospital: hospitalData });
@@ -77,7 +78,7 @@ export async function PUT(request: NextRequest) {
       'blog_board_name',
     ];
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {
         updateData[field] = updates[field];
@@ -118,6 +119,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...hospitalData } = data;
 
     return NextResponse.json({

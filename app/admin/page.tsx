@@ -32,8 +32,8 @@ export default function AdminPage() {
       if (response.ok) {
         setHospitals(data.hospitals);
       }
-    } catch (err) {
-      console.error('Error fetching hospitals:', err);
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,8 @@ export default function AdminPage() {
       } else {
         setError(data.error || '병원 계정 생성에 실패했습니다.');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error creating hospital:', error);
       setError('서버 오류가 발생했습니다.');
     }
   };

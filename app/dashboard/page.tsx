@@ -16,7 +16,6 @@ interface BlogResult {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [hospitalName, setHospitalName] = useState('');
   const [department, setDepartment] = useState('');
   const [topics, setTopics] = useState<Topics | null>(null);
@@ -26,10 +25,6 @@ export default function DashboardPage() {
   const [generatingBlog, setGeneratingBlog] = useState(false);
   const [blogResult, setBlogResult] = useState<BlogResult | null>(null);
   const [showKeywords, setShowKeywords] = useState(false);
-
-  useEffect(() => {
-    fetchHospitalInfo();
-  }, []);
 
   const fetchHospitalInfo = async () => {
     try {
@@ -41,10 +36,15 @@ export default function DashboardPage() {
       } else if (response.status === 401) {
         router.push('/login');
       }
-    } catch (err) {
-      console.error('Error fetching hospital info:', err);
+    } catch (error) {
+      console.error('Error fetching hospital info:', error);
     }
   };
+
+  useEffect(() => {
+    fetchHospitalInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchTopicRecommendations = async () => {
     setLoadingTopics(true);
@@ -79,7 +79,8 @@ export default function DashboardPage() {
       } else {
         alert('블로그 생성에 실패했습니다.');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error generating blog:', error);
       alert('오류가 발생했습니다.');
     } finally {
       setGeneratingBlog(false);

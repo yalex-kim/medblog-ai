@@ -38,7 +38,8 @@ export default function LoginPage() {
       } else {
         setError(data.error || '로그인에 실패했습니다.');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error logging in:', error);
       setError('서버 오류가 발생했습니다.');
     } finally {
       setLoading(false);

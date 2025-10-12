@@ -22,10 +22,6 @@ export default function SettingsPage() {
 
   const [missingFields, setMissingFields] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
   const fetchSettings = async () => {
     try {
       const response = await fetch('/api/hospital/settings');
@@ -51,12 +47,18 @@ export default function SettingsPage() {
       } else if (response.status === 401) {
         router.push('/login');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error fetching settings:', error);
       setError('설정을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const addService = () => {
     if (serviceInput.trim() && !mainServices.includes(serviceInput.trim())) {
@@ -103,7 +105,8 @@ export default function SettingsPage() {
       } else {
         setError(data.error || '설정 저장에 실패했습니다.');
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Error saving settings:', error);
       setError('서버 오류가 발생했습니다.');
     } finally {
       setSaving(false);
