@@ -67,29 +67,22 @@ export default function DashboardPage() {
     setShowKeywords(false);
 
     try {
-      console.log('🚀 Sending request to generate blog with topic:', topic);
       const response = await fetch('/api/generate-blog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic }),
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response ok:', response.ok);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Response data:', data);
-        console.log('📝 Content length:', data.content?.length);
-        console.log('🖼️ Image keywords:', data.imageKeywords);
         setBlogResult(data);
       } else {
         const errorData = await response.json();
-        console.error('❌ Error response:', errorData);
+        console.error('Error response:', errorData);
         alert('블로그 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error('💥 Error generating blog:', error);
+      console.error('Error generating blog:', error);
       alert('오류가 발생했습니다.');
     } finally {
       setGeneratingBlog(false);

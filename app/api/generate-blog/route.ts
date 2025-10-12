@@ -23,8 +23,6 @@ export async function POST(request: NextRequest) {
     const sessionData = getSession(request);
     const { topic, keywords } = await request.json();
 
-    console.log('🚀 API called with topic:', topic);
-
     if (!topic) {
       return NextResponse.json(
         { error: '주제를 입력해주세요.' },
@@ -48,9 +46,6 @@ export async function POST(request: NextRequest) {
         hospitalAddress = hospital.address || '';
       }
     }
-
-    console.log('🏥 Hospital info:', { hospitalName, hospitalAddress });
-    console.log('📞 Calling Claude API...');
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
