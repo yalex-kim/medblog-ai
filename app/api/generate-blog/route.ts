@@ -69,7 +69,19 @@ export async function POST(request: NextRequest) {
       ? message.content[0].text
       : '';
 
-    // 이미지 키워드 추출
+    // Extract image suggestions from content [이미지: description]
+    const imageSuggestions: Array<{description: string, position: number}> = [];
+    const imageRegex = /\[이미지:([^\]]+)\]/g;
+    let match;
+
+    while ((match = imageRegex.exec(fullContent)) !== null) {
+      imageSuggestions.push({
+        description: match[1].trim(),
+        position: match.index,
+      });
+    }
+
+    // 이미지 키워드 추출 (기존 방식 유지)
     const keywordMatch = fullContent.match(/\[이미지 키워드\]([\s\S]*?)(?:\n\n|$)/);
     let imageKeywords: string[] = [];
     let content = fullContent;
@@ -109,6 +121,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       content,
       imageKeywords,
+      imageSuggestions: imageSuggestions.map(s => s.description),
     });
   } catch (error) {
     console.error('Error generating blog:', error);

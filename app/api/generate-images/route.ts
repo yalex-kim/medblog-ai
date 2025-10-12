@@ -7,8 +7,36 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { keywords, topic } = await request.json();
+    const { keywords, topic, description, index } = await request.json();
 
+    // Single image generation (for regeneration)
+    if (description !== undefined && index !== undefined) {
+      console.log('🎨 Regenerating image for:', description);
+
+      const prompt = `Create a professional, clean medical illustration for a Korean hospital blog about "${topic}".
+Focus on: ${description}.
+Style: Modern, friendly, professional healthcare illustration with soft colors.
+No text in image. Suitable for blog post.`;
+
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+      });
+
+      return NextResponse.json({
+        image: {
+          keyword: description,
+          url: response.data[0].url,
+          prompt: prompt,
+        },
+        index,
+      });
+    }
+
+    // Batch image generation
     if (!keywords || keywords.length === 0) {
       return NextResponse.json(
         { error: '이미지 키워드를 입력해주세요.' },

@@ -12,6 +12,7 @@ interface Topics {
 interface BlogResult {
   content: string;
   imageKeywords: string[];
+  imageSuggestions?: string[];
 }
 
 interface GeneratedImage {
@@ -101,8 +102,9 @@ export default function DashboardPage() {
   };
 
   const handleGenerateImages = async () => {
-    if (!blogResult?.imageKeywords || blogResult.imageKeywords.length === 0) {
-      alert('이미지 키워드가 없습니다.');
+    const suggestions = blogResult?.imageSuggestions || [];
+    if (suggestions.length === 0) {
+      alert('이미지 제안이 없습니다.');
       return;
     }
 
@@ -113,7 +115,7 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          keywords: blogResult.imageKeywords,
+          keywords: suggestions,
           topic: currentTopic,
         }),
       });
@@ -131,6 +133,36 @@ export default function DashboardPage() {
       alert('이미지 생성 중 오류가 발생했습니다.');
     } finally {
       setGeneratingImages(false);
+    }
+  };
+
+  const handleRegenerateImage = async (index: number) => {
+    const image = generatedImages[index];
+
+    try {
+      const response = await fetch('/api/generate-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: image.keyword,
+          topic: currentTopic,
+          index,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const newImages = [...generatedImages];
+        newImages[index] = data.image;
+        setGeneratedImages(newImages);
+      } else {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        alert('이미지 재생성에 실패했습니다: ' + (errorData.error || ''));
+      }
+    } catch (error) {
+      console.error('Error regenerating image:', error);
+      alert('이미지 재생성 중 오류가 발생했습니다.');
     }
   };
 
@@ -292,7 +324,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handleGenerateImages}
-                disabled={generatingImages || !blogResult?.imageKeywords?.length}
+                disabled={generatingImages || !blogResult?.imageSuggestions?.length}
                 className="flex-1 min-w-[150px] bg-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-700 disabled:bg-gray-400"
               >
                 {generatingImages ? '이미지 생성 중...' : 'AI 이미지 생성'}
@@ -327,7 +359,7 @@ export default function DashboardPage() {
 
             {generatedImages.length > 0 && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-                <h3 className="font-semibold text-orange-900 mb-4">생성된 이미지</h3>
+                <h3 className="font-semibold text-orange-900 mb-4">생성된 이미지 ({generatedImages.length}개)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {generatedImages.map((image, index) => (
                     <div key={index} className="bg-white rounded-lg overflow-hidden shadow-md">
@@ -337,16 +369,24 @@ export default function DashboardPage() {
                         className="w-full h-64 object-cover"
                       />
                       <div className="p-4">
-                        <h4 className="font-medium text-gray-900 mb-2">{image.keyword}</h4>
-                        <a
-                          href={image.url}
-                          download={`${image.keyword}.png`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700"
-                        >
-                          다운로드
-                        </a>
+                        <h4 className="font-medium text-gray-900 mb-3">{image.keyword}</h4>
+                        <div className="flex gap-2">
+                          <a
+                            href={image.url}
+                            download={`${image.keyword}.png`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-center bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700"
+                          >
+                            다운로드
+                          </a>
+                          <button
+                            onClick={() => handleRegenerateImage(index)}
+                            className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"
+                          >
+                            재생성
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
