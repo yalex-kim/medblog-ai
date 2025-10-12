@@ -1,12 +1,26 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+function getSession(request: NextRequest) {
+  const session = request.cookies.get('session')?.value;
+  if (!session) return null;
+  try {
+    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
+    if (sessionData.exp < Date.now()) return null;
+    return sessionData;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const sessionData = getSession(request);
     const { topic, keywords } = await request.json();
 
     if (!topic) {
@@ -74,6 +88,25 @@ export async function POST(request: NextRequest) {
 
       // 본문에서 키워드 섹션 제거
       content = fullContent.replace(/\[이미지 키워드\][\s\S]*$/, '').trim();
+    }
+
+    // Extract title from content
+    const titleMatch = content.match(/^#\s+(.+)$/m);
+    const title = titleMatch ? titleMatch[1] : topic;
+
+    // Save to database if user is logged in
+    if (sessionData) {
+      await supabaseAdmin.from('blog_posts').insert([
+        {
+          hospital_id: sessionData.id,
+          title,
+          content,
+          topic,
+          keywords: keywords?.split(',').map((k: string) => k.trim()) || [],
+          image_keywords: imageKeywords,
+          posted_to_blog: false,
+        },
+      ]);
     }
 
     return NextResponse.json({
