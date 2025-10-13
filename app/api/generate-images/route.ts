@@ -9,6 +9,14 @@ export async function POST(request: NextRequest) {
   try {
     const { keywords, topic, description, text, index, blogPostId } = await request.json();
 
+    console.log('🔍 Request data:', {
+      hasBlogPostId: !!blogPostId,
+      blogPostId,
+      hasKeywords: !!keywords,
+      keywordCount: keywords?.length || 0,
+      hasDescription: !!description,
+    });
+
     // Single image generation (for regeneration)
     if (description !== undefined && index !== undefined) {
       console.log('🎨 Regenerating image for:', description);
