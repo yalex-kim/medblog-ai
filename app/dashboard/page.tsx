@@ -471,7 +471,11 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handleGenerateImages}
-                disabled={generatingImages || (!blogResult?.imageSuggestions?.length && !blogResult?.imageKeywords?.length)}
+                disabled={
+                  generatingImages ||
+                  ((!blogResult?.imageSuggestions || blogResult.imageSuggestions.length === 0) &&
+                   (!blogResult?.imageKeywords || blogResult.imageKeywords.length === 0))
+                }
                 className="flex-1 min-w-[150px] bg-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-700 disabled:bg-gray-400"
               >
                 {generatingImages ? '이미지 생성 중...' : 'AI 이미지 생성'}
