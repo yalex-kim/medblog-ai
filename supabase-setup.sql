@@ -25,38 +25,20 @@ CREATE TABLE IF NOT EXISTS blog_images (
 CREATE INDEX IF NOT EXISTS idx_blog_images_post_id ON blog_images(blog_post_id);
 
 -- 4. Enable Row Level Security (RLS)
+-- Note: We're using service role key which bypasses RLS, but we enable it for security
 ALTER TABLE blog_images ENABLE ROW LEVEL SECURITY;
 
 -- 5. Create RLS policies
--- Allow hospitals to read their own images
-CREATE POLICY "Hospitals can view their own blog images"
+-- Since we use service role key (supabaseAdmin), these policies are mainly for additional security
+-- Service role bypasses RLS, so these won't affect our API operations
+
+-- Allow public read access to images (since storage bucket is public)
+CREATE POLICY "Public images are viewable by everyone"
   ON blog_images
   FOR SELECT
-  USING (
-    blog_post_id IN (
-      SELECT id FROM blog_posts WHERE hospital_id = auth.uid()::text
-    )
-  );
+  USING (true);
 
--- Allow hospitals to insert images for their own posts
-CREATE POLICY "Hospitals can insert images for their own posts"
-  ON blog_images
-  FOR INSERT
-  WITH CHECK (
-    blog_post_id IN (
-      SELECT id FROM blog_posts WHERE hospital_id = auth.uid()::text
-    )
-  );
-
--- Allow hospitals to delete their own images
-CREATE POLICY "Hospitals can delete their own blog images"
-  ON blog_images
-  FOR DELETE
-  USING (
-    blog_post_id IN (
-      SELECT id FROM blog_posts WHERE hospital_id = auth.uid()::text
-    )
-  );
+-- Only service role can insert/delete (via API with proper authentication checks)
 
 -- 6. Storage Policies (if using SQL - otherwise set in Dashboard)
 -- Note: Storage policies may need to be set in Supabase Dashboard > Storage > Policies
