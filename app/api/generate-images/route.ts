@@ -28,7 +28,6 @@ If text is included, use a clean sans-serif font with good contrast.`;
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        quality: "standard",
       });
 
       const tempImageUrl = response.data?.[0]?.url || '';
@@ -102,7 +101,6 @@ If text is included, use a clean sans-serif font with good contrast.`;
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        quality: "standard",
       });
 
       const tempImageUrl = response.data?.[0]?.url || '';
