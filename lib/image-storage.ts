@@ -11,13 +11,21 @@ export async function uploadImageToStorage(
   fileName: string
 ): Promise<string> {
   try {
+    console.log('📥 Starting image download from:', imageUrl);
+
     // 1. Download the image from OpenAI
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.statusText}`);
+      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
     }
 
     const blob = await response.blob();
+    console.log('📦 Downloaded blob size:', blob.size, 'bytes, type:', blob.type);
+
+    if (blob.size < 1000) {
+      throw new Error(`Downloaded file too small (${blob.size} bytes). Likely not a valid image.`);
+    }
+
     const arrayBuffer = await blob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -25,6 +33,8 @@ export async function uploadImageToStorage(
     const timestamp = Date.now();
     const sanitizedFileName = fileName.replace(/[^a-z0-9가-힣]/gi, '_').substring(0, 50);
     const storagePath = `${timestamp}_${sanitizedFileName}.png`;
+
+    console.log('📝 Storage path:', storagePath);
 
     // 3. Upload to Supabase Storage
     const { error } = await supabaseAdmin.storage
@@ -35,18 +45,22 @@ export async function uploadImageToStorage(
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
+      console.error('❌ Supabase upload error:', error);
       throw new Error(`Failed to upload to storage: ${error.message}`);
     }
+
+    console.log('✅ Uploaded to Supabase Storage successfully');
 
     // 4. Get public URL
     const { data: urlData } = supabaseAdmin.storage
       .from('blog-images')
       .getPublicUrl(storagePath);
 
+    console.log('🔗 Public URL:', urlData.publicUrl);
+
     return urlData.publicUrl;
   } catch (error) {
-    console.error('Error uploading image to storage:', error);
+    console.error('💥 Error uploading image to storage:', error);
     throw error;
   }
 }
