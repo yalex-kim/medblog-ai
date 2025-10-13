@@ -107,11 +107,17 @@ export default function DashboardPage() {
   };
 
   const loadSavedPost = (post: SavedPost) => {
-    setBlogResult({
+    console.log('Loading saved post:', post);
+    console.log('Image keywords:', post.image_keywords);
+
+    const blogData = {
       content: post.content,
       imageKeywords: post.image_keywords || [],
       imageSuggestions: [],
-    });
+    };
+
+    console.log('Setting blogResult to:', blogData);
+    setBlogResult(blogData);
     setCurrentTopic(post.topic);
     setCurrentPostId(post.id);
     setEditedContent(post.content);
@@ -470,7 +476,13 @@ export default function DashboardPage() {
                 {showKeywords ? '키워드 숨기기' : '이미지 키워드'}
               </button>
               <button
-                onClick={handleGenerateImages}
+                onClick={() => {
+                  console.log('Button clicked!');
+                  console.log('blogResult:', blogResult);
+                  console.log('imageSuggestions:', blogResult?.imageSuggestions);
+                  console.log('imageKeywords:', blogResult?.imageKeywords);
+                  handleGenerateImages();
+                }}
                 disabled={
                   generatingImages ||
                   ((!blogResult?.imageSuggestions || blogResult.imageSuggestions.length === 0) &&
