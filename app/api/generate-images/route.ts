@@ -24,7 +24,7 @@ Style: Modern, friendly, professional healthcare illustration with soft colors s
 If text is included, use a clean sans-serif font with good contrast.`;
 
       const response = await openai.images.generate({
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
@@ -98,7 +98,7 @@ Style: Modern, friendly, professional healthcare illustration with soft colors s
 If text is included, use a clean sans-serif font with good contrast.`;
 
       const response = await openai.images.generate({
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
