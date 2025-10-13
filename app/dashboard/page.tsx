@@ -10,16 +10,31 @@ interface Topics {
   홍보성: string[];
 }
 
+interface ImageSuggestion {
+  description: string;
+  text: string;
+}
+
 interface BlogResult {
   content: string;
   imageKeywords: string[];
-  imageSuggestions?: string[];
+  imageSuggestions?: ImageSuggestion[];
 }
 
 interface GeneratedImage {
   keyword: string;
+  text?: string;
   url: string;
   prompt: string;
+}
+
+interface SavedPost {
+  id: string;
+  title: string;
+  topic: string;
+  content: string;
+  image_keywords: string[];
+  created_at: string;
 }
 
 export default function DashboardPage() {
@@ -37,6 +52,12 @@ export default function DashboardPage() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatingImages, setGeneratingImages] = useState(false);
 
+  // New states for saved posts
+  const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
+  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+
   const fetchHospitalInfo = async () => {
     try {
       const response = await fetch('/api/hospital/settings');
@@ -52,8 +73,21 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchSavedPosts = async () => {
+    try {
+      const response = await fetch('/api/blog-posts');
+      if (response.ok) {
+        const data = await response.json();
+        setSavedPosts(data.posts);
+      }
+    } catch (error) {
+      console.error('Error fetching saved posts:', error);
+    }
+  };
+
   useEffect(() => {
     fetchHospitalInfo();
+    fetchSavedPosts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -72,12 +106,28 @@ export default function DashboardPage() {
     }
   };
 
+  const loadSavedPost = (post: SavedPost) => {
+    setBlogResult({
+      content: post.content,
+      imageKeywords: post.image_keywords || [],
+      imageSuggestions: [],
+    });
+    setCurrentTopic(post.topic);
+    setCurrentPostId(post.id);
+    setEditedContent(post.content);
+    setIsEditMode(false);
+    setShowKeywords(false);
+    setGeneratedImages([]);
+  };
+
   const generateBlog = async (topic: string) => {
     setGeneratingBlog(true);
     setBlogResult(null);
     setShowKeywords(false);
     setGeneratedImages([]);
     setCurrentTopic(topic);
+    setCurrentPostId(null);
+    setIsEditMode(false);
 
     try {
       const response = await fetch('/api/generate-blog', {
@@ -89,6 +139,9 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setBlogResult(data);
+        setEditedContent(data.content);
+        // Refresh saved posts list
+        fetchSavedPosts();
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
@@ -102,8 +155,47 @@ export default function DashboardPage() {
     }
   };
 
+  const handleSaveEdit = async () => {
+    if (!currentPostId) return;
+
+    try {
+      const response = await fetch('/api/blog-posts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: currentPostId,
+          content: editedContent,
+        }),
+      });
+
+      if (response.ok) {
+        setBlogResult({ ...blogResult!, content: editedContent });
+        setIsEditMode(false);
+        alert('저장되었습니다!');
+        fetchSavedPosts();
+      } else {
+        alert('저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Error saving edit:', error);
+      alert('저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const toggleEditMode = () => {
+    if (isEditMode) {
+      // Cancel edit - revert to original
+      setEditedContent(blogResult?.content || '');
+    }
+    setIsEditMode(!isEditMode);
+  };
+
   const handleGenerateImages = async () => {
-    const suggestions = blogResult?.imageSuggestions || [];
+    // Use imageSuggestions if available, otherwise fall back to imageKeywords
+    const suggestions = blogResult?.imageSuggestions && blogResult.imageSuggestions.length > 0
+      ? blogResult.imageSuggestions
+      : blogResult?.imageKeywords || [];
+
     if (suggestions.length === 0) {
       alert('이미지 제안이 없습니다.');
       return;
@@ -146,6 +238,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           description: image.keyword,
+          text: image.text || '',
           topic: currentTopic,
           index,
         }),
@@ -266,7 +359,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Custom Topic Input */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <h3 className="text-lg font-semibold mb-4">직접 주제 입력</h3>
               <div className="flex gap-3">
                 <input
@@ -287,6 +380,32 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Saved Posts */}
+            {savedPosts.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">저장된 글 (최근 10개)</h3>
+                <div className="space-y-2">
+                  {savedPosts.map((post) => (
+                    <button
+                      key={post.id}
+                      onClick={() => loadSavedPost(post)}
+                      className="w-full text-left px-4 py-3 border border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900">{post.title}</h4>
+                          <p className="text-sm text-gray-500 mt-1">{post.topic}</p>
+                        </div>
+                        <span className="text-xs text-gray-400 ml-4">
+                          {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {generatingBlog && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-8 max-w-sm">
@@ -305,12 +424,39 @@ export default function DashboardPage() {
           /* Blog Result */
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-8">
-              <div className="prose max-w-none">
-                <ReactMarkdown>{blogResult.content}</ReactMarkdown>
-              </div>
+              {isEditMode ? (
+                <textarea
+                  value={editedContent}
+                  onChange={(e) => setEditedContent(e.target.value)}
+                  className="w-full min-h-[600px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  placeholder="글 내용을 편집하세요..."
+                />
+              ) : (
+                <div className="prose max-w-none">
+                  <ReactMarkdown>{blogResult.content}</ReactMarkdown>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-3">
+              {currentPostId && (
+                <>
+                  <button
+                    onClick={toggleEditMode}
+                    className="flex-1 min-w-[150px] bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700"
+                  >
+                    {isEditMode ? '취소' : '수정'}
+                  </button>
+                  {isEditMode && (
+                    <button
+                      onClick={handleSaveEdit}
+                      className="flex-1 min-w-[150px] bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700"
+                    >
+                      저장
+                    </button>
+                  )}
+                </>
+              )}
               <button
                 onClick={handleCopyAll}
                 className="flex-1 min-w-[150px] bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700"
@@ -325,7 +471,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handleGenerateImages}
-                disabled={generatingImages || !blogResult?.imageSuggestions?.length}
+                disabled={generatingImages || (!blogResult?.imageSuggestions?.length && !blogResult?.imageKeywords?.length)}
                 className="flex-1 min-w-[150px] bg-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-orange-700 disabled:bg-gray-400"
               >
                 {generatingImages ? '이미지 생성 중...' : 'AI 이미지 생성'}
@@ -372,7 +518,10 @@ export default function DashboardPage() {
                         className="w-full h-64 object-cover"
                       />
                       <div className="p-4">
-                        <h4 className="font-medium text-gray-900 mb-3">{image.keyword}</h4>
+                        <h4 className="font-medium text-gray-900 mb-1">{image.keyword}</h4>
+                        {image.text && (
+                          <p className="text-sm text-blue-600 mb-3 font-medium">📝 {image.text}</p>
+                        )}
                         <div className="flex gap-2">
                           <a
                             href={image.url}

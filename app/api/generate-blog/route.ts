@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 10164,
       temperature:1,
-      system:"당신은 한국의 병원 블로그 전문 작가입니다.\n\n다음 규칙을 반드시 준수하세요:\n1. 의료법 준수: 과대광고 금지, 단정적 표현 금지\n2. 톤: 따뜻하고 전문적, 환자 입장에서 공감\n3. 구조:\n   - 제목 (궁금증 유발)\n   - 도입부 (공감)\n   - 본문 (3-4개 섹션, 각 섹션은 ## 헤딩으로 시작)\n   - 마무리 (병원 방문 유도, 부드럽게)\n4. 길이: 1500-2000자\n5. 문체: ~입니다 체, 읽기 쉽게 구어체를 조금씩 섞어서(인데요~)\n6. 주의사항은 반드시 포함\n7. 절대 금지: \"최고\", \"유일\", \"완치\", \"100%\" 등\n8. 이미지 제안\n    글 중간에 관련 이미지 및 카드뉴스의 위치 및 내용을 제안. ([] 중괄호로 표시)\n9. Naver SEO 최적화",
+      system:"당신은 한국의 병원 블로그 전문 작가입니다.\n\n다음 규칙을 반드시 준수하세요:\n1. 의료법 준수: 과대광고 금지, 단정적 표현 금지\n2. 톤: 따뜻하고 전문적, 환자 입장에서 공감\n3. 구조:\n   - 제목 (궁금증 유발)\n   - 도입부 (공감)\n   - 본문 (3-4개 섹션, 각 섹션은 ## 헤딩으로 시작)\n   - 마무리 (병원 방문 유도, 부드럽게)\n4. 길이: 1500-2000자\n5. 문체: ~입니다 체, 읽기 쉽게 구어체를 조금씩 섞어서(인데요~)\n6. 주의사항은 반드시 포함\n7. 절대 금지: \"최고\", \"유일\", \"완치\", \"100%\" 등\n8. 이미지 제안 (필수):\n   - 본문 중간에 3-5개의 카드뉴스용 이미지 제안을 [이미지: 시각적설명 | 텍스트내용] 형식으로 삽입\n   - 시각적설명: 이미지에 그려질 장면/분위기 (예: 임신부가 편안하게 진료받는 모습)\n   - 텍스트내용: 이미지에 표시될 핵심 메시지 (예: 정기 검진으로 건강한 임신 유지하기)\n   - 예시: [이미지: 병원 상담실에서 의사와 환자가 대화하는 따뜻한 장면 | 궁금한 점은 언제든 상담하세요]\n   - 각 주요 섹션마다 관련 이미지 제안 포함\n   - 텍스트는 간결하고 명확하게 (10-20자)\n9. Naver SEO 최적화",
       messages: [
         {
           "role": 'user',
@@ -69,14 +69,17 @@ export async function POST(request: NextRequest) {
       ? message.content[0].text
       : '';
 
-    // Extract image suggestions from content [이미지: description]
-    const imageSuggestions: Array<{description: string, position: number}> = [];
-    const imageRegex = /\[이미지:([^\]]+)\]/g;
+    // Extract image suggestions from content [이미지: visual | text]
+    const imageSuggestions: Array<{description: string, text: string, position: number}> = [];
+    const imageRegex = /\[이미지:([^\|\]]+)(?:\|([^\]]+))?\]/g;
     let match;
 
     while ((match = imageRegex.exec(fullContent)) !== null) {
+      const visualDescription = match[1].trim();
+      const textContent = match[2] ? match[2].trim() : '';
       imageSuggestions.push({
-        description: match[1].trim(),
+        description: visualDescription,
+        text: textContent,
         position: match.index,
       });
     }
@@ -121,7 +124,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       content,
       imageKeywords,
-      imageSuggestions: imageSuggestions.map(s => s.description),
+      imageSuggestions: imageSuggestions.map(s => ({
+        description: s.description,
+        text: s.text,
+      })),
     });
   } catch (error) {
     console.error('Error generating blog:', error);

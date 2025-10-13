@@ -1,22 +1,26 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(request: NextRequest) {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
   try {
-    const { keywords, topic, description, index } = await request.json();
+    const { keywords, topic, description, text, index } = await request.json();
 
     // Single image generation (for regeneration)
     if (description !== undefined && index !== undefined) {
       console.log('🎨 Regenerating image for:', description);
 
+      const textInstruction = text
+        ? `Include Korean text overlay: "${text}". Make the text large, clear, and readable.`
+        : 'No text in image.';
+
       const prompt = `Create a professional, clean medical illustration for a Korean hospital blog about "${topic}".
-Focus on: ${description}.
-Style: Modern, friendly, professional healthcare illustration with soft colors.
-No text in image. Suitable for blog post.`;
+Visual scene: ${description}.
+${textInstruction}
+Style: Modern, friendly, professional healthcare illustration with soft colors suitable for card news.
+If text is included, use a clean sans-serif font with good contrast.`;
 
       const response = await openai.images.generate({
         model: "dall-e-3",
@@ -49,12 +53,21 @@ No text in image. Suitable for blog post.`;
     console.log('🎨 Generating images for keywords:', keywords);
 
     // Generate images for each keyword
-    const imagePromises = keywords.map(async (keyword: string) => {
+    const imagePromises = keywords.map(async (keyword: string | {description: string, text: string}) => {
+      // Handle both string and object formats
+      const visualDescription = typeof keyword === 'string' ? keyword : keyword.description;
+      const textContent = typeof keyword === 'object' && keyword !== null ? keyword.text : '';
+
       // Create a detailed prompt for medical/hospital blog images
+      const textInstruction = textContent
+        ? `Include Korean text overlay: "${textContent}". Make the text large, clear, and readable.`
+        : 'No text in image.';
+
       const prompt = `Create a professional, clean medical illustration for a Korean hospital blog about "${topic}".
-Focus on: ${keyword}.
-Style: Modern, friendly, professional healthcare illustration with soft colors.
-No text in image. Suitable for blog post.`;
+Visual scene: ${visualDescription}.
+${textInstruction}
+Style: Modern, friendly, professional healthcare illustration with soft colors suitable for card news.
+If text is included, use a clean sans-serif font with good contrast.`;
 
       const response = await openai.images.generate({
         model: "dall-e-3",
@@ -65,7 +78,8 @@ No text in image. Suitable for blog post.`;
       });
 
       return {
-        keyword,
+        keyword: visualDescription,
+        text: textContent,
         url: response.data?.[0]?.url || '',
         prompt: prompt,
       };
