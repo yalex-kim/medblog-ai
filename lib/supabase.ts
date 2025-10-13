@@ -49,3 +49,14 @@ export interface BlogPost {
   posted_at: string | null;
   created_at: string;
 }
+
+export interface BlogImage {
+  id: string;
+  blog_post_id: string;
+  keyword: string;
+  text_content: string | null;
+  storage_path: string;
+  public_url: string;
+  prompt: string | null;
+  created_at: string;
+}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getImagesForPost } from '@/lib/image-storage';
 
 function getSession(request: NextRequest) {
   const session = request.cookies.get('session')?.value;
@@ -33,7 +34,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '글 목록을 불러오는데 실패했습니다.' }, { status: 500 });
     }
 
-    return NextResponse.json({ posts: posts || [] });
+    // Fetch images for each post
+    const postsWithImages = await Promise.all(
+      (posts || []).map(async (post) => {
+        const images = await getImagesForPost(post.id);
+        return {
+          ...post,
+          images: images.map((img) => ({
+            keyword: img.keyword,
+            text: img.text_content,
+            url: img.public_url,
+            prompt: img.prompt,
+          })),
+        };
+      })
+    );
+
+    return NextResponse.json({ posts: postsWithImages });
   } catch (error) {
     console.error('Error in GET /api/blog-posts:', error);
     return NextResponse.json({ error: '서버 오류가 발생했습니다.' }, { status: 500 });

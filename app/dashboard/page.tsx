@@ -35,6 +35,7 @@ interface SavedPost {
   content: string;
   image_keywords: string[];
   created_at: string;
+  images?: GeneratedImage[];
 }
 
 export default function DashboardPage() {
@@ -109,6 +110,7 @@ export default function DashboardPage() {
   const loadSavedPost = (post: SavedPost) => {
     console.log('Loading saved post:', post);
     console.log('Image keywords:', post.image_keywords);
+    console.log('Saved images:', post.images);
 
     // Extract image suggestions from content if they exist
     const imageSuggestions: ImageSuggestion[] = [];
@@ -139,7 +141,9 @@ export default function DashboardPage() {
     setEditedContent(post.content);
     setIsEditMode(false);
     setShowKeywords(false);
-    setGeneratedImages([]);
+
+    // Load saved images if they exist
+    setGeneratedImages(post.images || []);
   };
 
   const generateBlog = async (topic: string) => {
@@ -162,6 +166,10 @@ export default function DashboardPage() {
         const data = await response.json();
         setBlogResult(data);
         setEditedContent(data.content);
+        // Set the blog post ID for new posts
+        if (data.blogPostId) {
+          setCurrentPostId(data.blogPostId);
+        }
         // Refresh saved posts list
         fetchSavedPosts();
       } else {
@@ -232,6 +240,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           keywords: suggestions,
           topic: currentTopic,
+          blogPostId: currentPostId,
         }),
       });
 
@@ -263,6 +272,7 @@ export default function DashboardPage() {
           text: image.text || '',
           topic: currentTopic,
           index,
+          blogPostId: currentPostId,
         }),
       });
 

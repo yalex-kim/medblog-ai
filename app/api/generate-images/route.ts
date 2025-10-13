@@ -1,12 +1,13 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
+import { uploadImageToStorage, saveImageMetadata } from '@/lib/image-storage';
 
 export async function POST(request: NextRequest) {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
   try {
-    const { keywords, topic, description, text, index } = await request.json();
+    const { keywords, topic, description, text, index, blogPostId } = await request.json();
 
     // Single image generation (for regeneration)
     if (description !== undefined && index !== undefined) {
@@ -30,12 +31,39 @@ If text is included, use a clean sans-serif font with good contrast.`;
         quality: "standard",
       });
 
-      const imageUrl = response.data?.[0]?.url || '';
+      const tempImageUrl = response.data?.[0]?.url || '';
+
+      // Upload to Supabase Storage if blogPostId is provided
+      let finalImageUrl = tempImageUrl;
+      if (blogPostId && tempImageUrl) {
+        try {
+          finalImageUrl = await uploadImageToStorage(tempImageUrl, description);
+
+          // Extract storage path from URL for metadata
+          const urlParts = finalImageUrl.split('/');
+          const storagePath = urlParts[urlParts.length - 1];
+
+          // Save metadata to database
+          await saveImageMetadata(
+            blogPostId,
+            description,
+            text || '',
+            storagePath,
+            finalImageUrl,
+            prompt
+          );
+
+          console.log('✅ Image uploaded to storage:', finalImageUrl);
+        } catch (uploadError) {
+          console.error('Failed to upload image, using temporary URL:', uploadError);
+          // Fall back to temporary URL if upload fails
+        }
+      }
 
       return NextResponse.json({
         image: {
           keyword: description,
-          url: imageUrl,
+          url: finalImageUrl,
           prompt: prompt,
         },
         index,
@@ -77,10 +105,39 @@ If text is included, use a clean sans-serif font with good contrast.`;
         quality: "standard",
       });
 
+      const tempImageUrl = response.data?.[0]?.url || '';
+
+      // Upload to Supabase Storage if blogPostId is provided
+      let finalImageUrl = tempImageUrl;
+      if (blogPostId && tempImageUrl) {
+        try {
+          finalImageUrl = await uploadImageToStorage(tempImageUrl, visualDescription);
+
+          // Extract storage path from URL for metadata
+          const urlParts = finalImageUrl.split('/');
+          const storagePath = urlParts[urlParts.length - 1];
+
+          // Save metadata to database
+          await saveImageMetadata(
+            blogPostId,
+            visualDescription,
+            textContent,
+            storagePath,
+            finalImageUrl,
+            prompt
+          );
+
+          console.log('✅ Image uploaded to storage:', finalImageUrl);
+        } catch (uploadError) {
+          console.error('Failed to upload image, using temporary URL:', uploadError);
+          // Fall back to temporary URL if upload fails
+        }
+      }
+
       return {
         keyword: visualDescription,
         text: textContent,
-        url: response.data?.[0]?.url || '',
+        url: finalImageUrl,
         prompt: prompt,
       };
     });

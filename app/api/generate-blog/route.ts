@@ -107,8 +107,9 @@ export async function POST(request: NextRequest) {
     const title = titleMatch ? titleMatch[1] : topic;
 
     // Save to database if user is logged in
+    let blogPostId = null;
     if (sessionData) {
-      await supabaseAdmin.from('blog_posts').insert([
+      const { data, error } = await supabaseAdmin.from('blog_posts').insert([
         {
           hospital_id: sessionData.id,
           title,
@@ -118,7 +119,11 @@ export async function POST(request: NextRequest) {
           image_keywords: imageKeywords,
           posted_to_blog: false,
         },
-      ]);
+      ]).select().single();
+
+      if (data && !error) {
+        blogPostId = data.id;
+      }
     }
 
     return NextResponse.json({
@@ -128,6 +133,7 @@ export async function POST(request: NextRequest) {
         description: s.description,
         text: s.text,
       })),
+      blogPostId,
     });
   } catch (error) {
     console.error('Error generating blog:', error);
