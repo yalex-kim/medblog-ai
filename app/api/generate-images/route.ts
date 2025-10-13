@@ -26,10 +26,12 @@ No text in image. Suitable for blog post.`;
         quality: "standard",
       });
 
+      const imageUrl = response.data?.[0]?.url || '';
+
       return NextResponse.json({
         image: {
           keyword: description,
-          url: response.data[0].url,
+          url: imageUrl,
           prompt: prompt,
         },
         index,
@@ -64,7 +66,7 @@ No text in image. Suitable for blog post.`;
 
       return {
         keyword,
-        url: response.data[0].url,
+        url: response.data?.[0]?.url || '',
         prompt: prompt,
       };
     });
@@ -74,10 +76,11 @@ No text in image. Suitable for blog post.`;
     console.log('✅ Generated', images.length, 'images');
 
     return NextResponse.json({ images });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating images:', error);
+    const errorMessage = error instanceof Error ? error.message : '이미지 생성 중 오류가 발생했습니다.';
     return NextResponse.json(
-      { error: error.message || '이미지 생성 중 오류가 발생했습니다.' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

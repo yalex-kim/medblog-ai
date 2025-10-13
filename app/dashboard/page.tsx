@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import Image from 'next/image';
 
 interface Topics {
   정보성: string[];
@@ -363,9 +364,11 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {generatedImages.map((image, index) => (
                     <div key={index} className="bg-white rounded-lg overflow-hidden shadow-md">
-                      <img
+                      <Image
                         src={image.url}
                         alt={image.keyword}
+                        width={1024}
+                        height={1024}
                         className="w-full h-64 object-cover"
                       />
                       <div className="p-4">
