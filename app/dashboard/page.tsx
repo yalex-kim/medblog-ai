@@ -110,10 +110,26 @@ export default function DashboardPage() {
     console.log('Loading saved post:', post);
     console.log('Image keywords:', post.image_keywords);
 
+    // Extract image suggestions from content if they exist
+    const imageSuggestions: ImageSuggestion[] = [];
+    const imageRegex = /\[이미지:([^\|\]]+)(?:\|([^\]]+))?\]/g;
+    let match;
+
+    while ((match = imageRegex.exec(post.content)) !== null) {
+      const visualDescription = match[1].trim();
+      const textContent = match[2] ? match[2].trim() : '';
+      imageSuggestions.push({
+        description: visualDescription,
+        text: textContent,
+      });
+    }
+
+    console.log('Extracted image suggestions from content:', imageSuggestions);
+
     const blogData = {
       content: post.content,
       imageKeywords: post.image_keywords || [],
-      imageSuggestions: [],
+      imageSuggestions: imageSuggestions.length > 0 ? imageSuggestions : undefined,
     };
 
     console.log('Setting blogResult to:', blogData);
