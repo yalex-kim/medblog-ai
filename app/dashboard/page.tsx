@@ -545,13 +545,14 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {generatedImages.map((image, index) => (
                     <div key={index} className="bg-white rounded-lg overflow-hidden shadow-md">
-                      <Image
-                        src={image.url}
-                        alt={image.keyword}
-                        width={1024}
-                        height={1024}
-                        className="w-full h-64 object-cover"
-                      />
+                      <div className="relative w-full aspect-square">
+                        <Image
+                          src={image.url}
+                          alt={image.keyword}
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                       <div className="p-4">
                         <h4 className="font-medium text-gray-900 mb-1">{image.keyword}</h4>
                         {image.text && (
