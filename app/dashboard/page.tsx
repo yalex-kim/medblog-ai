@@ -91,6 +91,23 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = () => {
+      // When user presses back, return to initial state
+      setBlogResult(null);
+      setGeneratedImages([]);
+      setCurrentTopic('');
+      setCurrentPostId(null);
+      setIsEditMode(false);
+      // Refresh saved posts to show newly created content
+      fetchSavedPosts();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const fetchTopicRecommendations = async () => {
     setLoadingTopics(true);
     try {
@@ -142,6 +159,9 @@ export default function DashboardPage() {
 
     // Load saved images if they exist
     setGeneratedImages(post.images || []);
+
+    // Add to browser history so back button works
+    window.history.pushState({ view: 'post' }, '');
   };
 
   const generateBlog = async (topic: string) => {
@@ -169,6 +189,8 @@ export default function DashboardPage() {
         }
         // Refresh saved posts list
         fetchSavedPosts();
+        // Add to browser history so back button works
+        window.history.pushState({ view: 'post' }, '');
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
@@ -526,12 +548,8 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => {
-                  setBlogResult(null);
-                  setGeneratedImages([]);
-                  setCurrentTopic('');
-                  setCurrentPostId(null);
-                  // Refresh saved posts list to include newly created images
-                  fetchSavedPosts();
+                  // Use history.back() to return to previous state
+                  window.history.back();
                 }}
                 className="flex-1 min-w-[150px] bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700"
               >

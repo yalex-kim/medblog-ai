@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -9,6 +9,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          // User is already logged in, redirect to dashboard
+          router.replace('/dashboard');
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,13 +47,13 @@ export default function LoginPage() {
       if (response.ok) {
         // Check if password change is required
         if (data.hospital.must_change_password) {
-          router.push('/change-password');
+          router.replace('/change-password');
         } else if (!data.hospital.is_initial_setup_complete) {
           // Redirect to settings if setup not complete
-          router.push('/settings');
+          router.replace('/settings');
         } else {
-          // Go to dashboard
-          router.push('/dashboard');
+          // Go to dashboard (replace to prevent back to login)
+          router.replace('/dashboard');
         }
       } else {
         setError(data.error || '로그인에 실패했습니다.');
@@ -45,6 +65,18 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-900">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">

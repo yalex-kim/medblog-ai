@@ -1,18 +1,40 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    router.push('/login');
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        if (response.ok) {
+          // User is logged in, go to dashboard
+          router.replace('/dashboard');
+        } else {
+          // Not logged in, go to login
+          router.replace('/login');
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        router.replace('/login');
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkSession();
   }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-900">리다이렉트 중...</p>
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-900">로딩 중...</p>
+      </div>
     </div>
   );
 }
