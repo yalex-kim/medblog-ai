@@ -247,6 +247,8 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         setGeneratedImages(data.images);
+        // Refresh saved posts to update with newly generated images
+        fetchSavedPosts();
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
@@ -523,6 +525,9 @@ export default function DashboardPage() {
                   setBlogResult(null);
                   setGeneratedImages([]);
                   setCurrentTopic('');
+                  setCurrentPostId(null);
+                  // Refresh saved posts list to include newly created images
+                  fetchSavedPosts();
                 }}
                 className="flex-1 min-w-[150px] bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700"
               >
