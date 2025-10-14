@@ -13,10 +13,10 @@ export async function uploadImageFromBuffer(
   try {
     console.log('📦 Uploading buffer size:', imageBuffer.length, 'bytes');
 
-    // Generate a unique file name
+    // Generate a unique file name (English only, no Korean characters)
     const timestamp = Date.now();
-    const sanitizedFileName = fileName.replace(/[^a-z0-9가-힣]/gi, '_').substring(0, 50);
-    const storagePath = `${timestamp}_${sanitizedFileName}.png`;
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const storagePath = `${timestamp}_${randomId}.png`;
 
     console.log('📝 Storage path:', storagePath);
 
@@ -78,10 +78,10 @@ export async function uploadImageToStorage(
     const arrayBuffer = await blob.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // 2. Generate a unique file name
+    // 2. Generate a unique file name (English only, no Korean characters)
     const timestamp = Date.now();
-    const sanitizedFileName = fileName.replace(/[^a-z0-9가-힣]/gi, '_').substring(0, 50);
-    const storagePath = `${timestamp}_${sanitizedFileName}.png`;
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const storagePath = `${timestamp}_${randomId}.png`;
 
     console.log('📝 Storage path:', storagePath);
 
