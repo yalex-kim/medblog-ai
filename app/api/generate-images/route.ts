@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         prompt: prompt,
         n: 1,
         size: "1024x1024",
+        quality: "low",
       });
 
       // gpt-image-1 returns b64_json by default
