@@ -466,17 +466,21 @@ export default function DashboardPage() {
                   placeholder="글 내용을 편집하세요..."
                 />
               ) : (
-                <div className="prose prose-lg max-w-none
-                  prose-headings:font-bold prose-headings:text-gray-900
-                  prose-h1:text-3xl prose-h1:mb-6
-                  prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
-                  prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
-                  prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4
-                  prose-strong:text-gray-900 prose-strong:font-semibold
-                  prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
-                  prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
-                  prose-li:my-2 prose-li:text-gray-700">
-                  <ReactMarkdown>{blogResult.content}</ReactMarkdown>
+                <div className="markdown-content">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-0" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-xl font-bold text-gray-900 mb-3 mt-6" {...props} />,
+                      p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed mb-4" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc pl-6 my-4 space-y-2" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal pl-6 my-4 space-y-2" {...props} />,
+                      li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+                    }}
+                  >
+                    {blogResult.content}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
