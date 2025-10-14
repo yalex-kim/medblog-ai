@@ -123,7 +123,8 @@ export async function saveImageMetadata(
   textContent: string,
   storagePath: string,
   publicUrl: string,
-  prompt: string
+  prompt: string,
+  order?: number
 ) {
   const { error } = await supabaseAdmin
     .from('blog_images')
@@ -134,6 +135,7 @@ export async function saveImageMetadata(
       storage_path: storagePath,
       public_url: publicUrl,
       prompt,
+      display_order: order,
     });
 
   if (error) {
@@ -150,7 +152,7 @@ export async function getImagesForPost(blogPostId: string) {
     .from('blog_images')
     .select('*')
     .eq('blog_post_id', blogPostId)
-    .order('created_at', { ascending: true });
+    .order('display_order', { ascending: true });
 
   if (error) {
     console.error('Error fetching images:', error);

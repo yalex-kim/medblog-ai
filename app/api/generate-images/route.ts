@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImageFromBuffer, saveImageMetadata } from '@/lib/image-storage';
+import { generateImagePrompt, parseImageType, ImageType } from '@/lib/image-prompts';
 
 export async function POST(request: NextRequest) {
   const openai = new OpenAI({
@@ -21,15 +22,11 @@ export async function POST(request: NextRequest) {
     if (description !== undefined && index !== undefined) {
       console.log('🎨 Regenerating image for:', description);
 
-      const textInstruction = text
-        ? `Include Korean text overlay: "${text}". Make the text large, clear, and readable.`
-        : 'No text in image.';
+      // Parse image type from description
+      const { type, description: cleanDescription } = parseImageType(description);
 
-      const prompt = `Create a professional, clean medical illustration for a Korean hospital blog about "${topic}".
-Visual scene: ${description}.
-${textInstruction}
-Style: Modern, friendly, professional healthcare illustration with soft colors suitable for card news.
-If text is included, use a clean sans-serif font with good contrast.`;
+      // Generate typed prompt
+      const prompt = generateImagePrompt(type, topic, cleanDescription, text);
 
       const response = await openai.images.generate({
         model: "gpt-image-1",
@@ -63,7 +60,8 @@ If text is included, use a clean sans-serif font with good contrast.`;
             text || '',
             storagePath,
             finalImageUrl,
-            prompt
+            prompt,
+            index // Pass order index
           );
 
           console.log('✅ Image uploaded to storage:', finalImageUrl);
@@ -75,9 +73,10 @@ If text is included, use a clean sans-serif font with good contrast.`;
 
       return NextResponse.json({
         image: {
-          keyword: description,
+          keyword: cleanDescription,
           url: finalImageUrl,
           prompt: prompt,
+          type: type,
         },
         index,
       });
@@ -94,21 +93,19 @@ If text is included, use a clean sans-serif font with good contrast.`;
     console.log('🎨 Generating images for keywords:', keywords);
 
     // Generate images for each keyword
-    const imagePromises = keywords.map(async (keyword: string | {description: string, text: string}) => {
+    const imagePromises = keywords.map(async (keyword: string | {type?: string, description: string, text: string}, idx: number) => {
       // Handle both string and object formats
       const visualDescription = typeof keyword === 'string' ? keyword : keyword.description;
       const textContent = typeof keyword === 'object' && keyword !== null ? keyword.text : '';
+      const imageType = typeof keyword === 'object' && keyword !== null && keyword.type ? keyword.type : '';
 
-      // Create a detailed prompt for medical/hospital blog images
-      const textInstruction = textContent
-        ? `Include Korean text overlay: "${textContent}". Make the text large, clear, and readable.`
-        : 'No text in image.';
+      // Parse image type from description (supports both TYPE|description format and separate type field)
+      const { type, description: cleanDescription } = imageType
+        ? { type: imageType as ImageType, description: visualDescription }
+        : parseImageType(visualDescription);
 
-      const prompt = `Create a professional, clean medical illustration for a Korean hospital blog about "${topic}".
-Visual scene: ${visualDescription}.
-${textInstruction}
-Style: Modern, friendly, professional healthcare illustration with soft colors suitable for card news.
-If text is included, use a clean sans-serif font with good contrast.`;
+      // Generate typed prompt
+      const prompt = generateImagePrompt(type, topic, cleanDescription, textContent);
 
       const response = await openai.images.generate({
         model: "gpt-image-1",
@@ -142,7 +139,8 @@ If text is included, use a clean sans-serif font with good contrast.`;
             textContent,
             storagePath,
             finalImageUrl,
-            prompt
+            prompt,
+            idx // Pass order index
           );
 
           console.log('✅ Image uploaded to storage:', finalImageUrl);
@@ -153,10 +151,11 @@ If text is included, use a clean sans-serif font with good contrast.`;
       }
 
       return {
-        keyword: visualDescription,
+        keyword: cleanDescription,
         text: textContent,
         url: finalImageUrl,
         prompt: prompt,
+        type: type,
       };
     });
 
