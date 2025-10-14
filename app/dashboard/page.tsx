@@ -48,7 +48,6 @@ export default function DashboardPage() {
   const [customTopic, setCustomTopic] = useState('');
   const [generatingBlog, setGeneratingBlog] = useState(false);
   const [blogResult, setBlogResult] = useState<BlogResult | null>(null);
-  const [showKeywords, setShowKeywords] = useState(false);
   const [currentTopic, setCurrentTopic] = useState('');
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatingImages, setGeneratingImages] = useState(false);
@@ -140,7 +139,6 @@ export default function DashboardPage() {
     setCurrentPostId(post.id);
     setEditedContent(post.content);
     setIsEditMode(false);
-    setShowKeywords(false);
 
     // Load saved images if they exist
     setGeneratedImages(post.images || []);
@@ -149,7 +147,6 @@ export default function DashboardPage() {
   const generateBlog = async (topic: string) => {
     setGeneratingBlog(true);
     setBlogResult(null);
-    setShowKeywords(false);
     setGeneratedImages([]);
     setCurrentTopic(topic);
     setCurrentPostId(null);
@@ -511,12 +508,6 @@ export default function DashboardPage() {
                 전체 복사
               </button>
               <button
-                onClick={() => setShowKeywords(!showKeywords)}
-                className="flex-1 min-w-[150px] bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700"
-              >
-                {showKeywords ? '키워드 숨기기' : '이미지 키워드'}
-              </button>
-              <button
                 onClick={() => {
                   console.log('Button clicked!');
                   console.log('blogResult:', blogResult);
@@ -547,22 +538,6 @@ export default function DashboardPage() {
                 새 글 작성
               </button>
             </div>
-
-            {showKeywords && blogResult.imageKeywords.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-                <h3 className="font-semibold text-purple-900 mb-3">이미지 제작용 키워드</h3>
-                <div className="flex flex-wrap gap-2">
-                  {blogResult.imageKeywords.map((keyword, index) => (
-                    <span
-                      key={index}
-                      className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {generatedImages.length > 0 && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
