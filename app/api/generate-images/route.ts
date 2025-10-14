@@ -36,7 +36,6 @@ If text is included, use a clean sans-serif font with good contrast.`;
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        response_format: "url", // gpt-image-1 requires this to return URLs instead of b64_json
       });
 
       const tempImageUrl = response.data?.[0]?.url || '';
@@ -110,7 +109,6 @@ If text is included, use a clean sans-serif font with good contrast.`;
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        response_format: "url", // gpt-image-1 requires this to return URLs instead of b64_json
       });
 
       const tempImageUrl = response.data?.[0]?.url || '';
