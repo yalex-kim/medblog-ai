@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadImageToStorage, saveImageMetadata } from '@/lib/image-storage';
+import { uploadImageFromBuffer, saveImageMetadata } from '@/lib/image-storage';
 
 export async function POST(request: NextRequest) {
   const openai = new OpenAI({
@@ -38,13 +38,19 @@ If text is included, use a clean sans-serif font with good contrast.`;
         size: "1024x1024",
       });
 
-      const tempImageUrl = response.data?.[0]?.url || '';
+      // gpt-image-1 returns b64_json by default
+      const b64Image = response.data?.[0]?.b64_json;
 
-      // Upload to Supabase Storage if blogPostId is provided
-      let finalImageUrl = tempImageUrl;
-      if (blogPostId && tempImageUrl) {
+      if (!b64Image) {
+        throw new Error('No image data received from OpenAI');
+      }
+
+      // Convert base64 to buffer and upload to Supabase
+      let finalImageUrl = '';
+      if (blogPostId && b64Image) {
         try {
-          finalImageUrl = await uploadImageToStorage(tempImageUrl, description);
+          const imageBuffer = Buffer.from(b64Image, 'base64');
+          finalImageUrl = await uploadImageFromBuffer(imageBuffer, description);
 
           // Extract storage path from URL for metadata
           const urlParts = finalImageUrl.split('/');
@@ -111,13 +117,19 @@ If text is included, use a clean sans-serif font with good contrast.`;
         size: "1024x1024",
       });
 
-      const tempImageUrl = response.data?.[0]?.url || '';
+      // gpt-image-1 returns b64_json by default
+      const b64Image = response.data?.[0]?.b64_json;
 
-      // Upload to Supabase Storage if blogPostId is provided
-      let finalImageUrl = tempImageUrl;
-      if (blogPostId && tempImageUrl) {
+      if (!b64Image) {
+        throw new Error('No image data received from OpenAI');
+      }
+
+      // Convert base64 to buffer and upload to Supabase
+      let finalImageUrl = '';
+      if (blogPostId && b64Image) {
         try {
-          finalImageUrl = await uploadImageToStorage(tempImageUrl, visualDescription);
+          const imageBuffer = Buffer.from(b64Image, 'base64');
+          finalImageUrl = await uploadImageFromBuffer(imageBuffer, visualDescription);
 
           // Extract storage path from URL for metadata
           const urlParts = finalImageUrl.split('/');

@@ -1,6 +1,55 @@
 import { supabaseAdmin } from './supabase';
 
 /**
+ * Uploads an image buffer directly to Supabase Storage
+ * @param imageBuffer - The image buffer
+ * @param fileName - The file name to save as (without extension)
+ * @returns The public URL of the uploaded image
+ */
+export async function uploadImageFromBuffer(
+  imageBuffer: Buffer,
+  fileName: string
+): Promise<string> {
+  try {
+    console.log('📦 Uploading buffer size:', imageBuffer.length, 'bytes');
+
+    // Generate a unique file name
+    const timestamp = Date.now();
+    const sanitizedFileName = fileName.replace(/[^a-z0-9가-힣]/gi, '_').substring(0, 50);
+    const storagePath = `${timestamp}_${sanitizedFileName}.png`;
+
+    console.log('📝 Storage path:', storagePath);
+
+    // Upload to Supabase Storage
+    const { error } = await supabaseAdmin.storage
+      .from('blog-images')
+      .upload(storagePath, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('❌ Supabase upload error:', error);
+      throw new Error(`Failed to upload to storage: ${error.message}`);
+    }
+
+    console.log('✅ Uploaded to Supabase Storage successfully');
+
+    // Get public URL
+    const { data: urlData } = supabaseAdmin.storage
+      .from('blog-images')
+      .getPublicUrl(storagePath);
+
+    console.log('🔗 Public URL:', urlData.publicUrl);
+
+    return urlData.publicUrl;
+  } catch (error) {
+    console.error('💥 Error uploading buffer to storage:', error);
+    throw error;
+  }
+}
+
+/**
  * Downloads an image from a URL and uploads it to Supabase Storage
  * @param imageUrl - The temporary DALL-E image URL
  * @param fileName - The file name to save as (without extension)
