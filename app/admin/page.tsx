@@ -254,7 +254,11 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {hospitals.map((hospital) => (
-                    <tr key={hospital.id}>
+                    <tr
+                      key={hospital.id}
+                      onClick={() => router.push(`/admin/hospitals/${hospital.id}`)}
+                      className="cursor-pointer hover:bg-blue-50 transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {hospital.hospital_id}
                       </td>
