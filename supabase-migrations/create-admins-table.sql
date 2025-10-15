@@ -25,11 +25,12 @@ CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username);
 CREATE INDEX IF NOT EXISTS idx_admins_is_active ON admins(is_active);
 
 -- Insert default admin account (password: admin123! - MUST CHANGE AFTER FIRST LOGIN)
--- Password hash for 'admin123!' generated with bcrypt rounds=10
+-- Password hash for 'admin123!' generated with bcryptjs rounds=10
+-- To generate new hash: node scripts/generate-admin-hash.js [your-password]
 INSERT INTO admins (username, password_hash, role, full_name, email)
 VALUES (
   'admin',
-  '$2a$10$8K1p/a0dL3LdGfwxTXLnkuH0vZC0h4O6A7E3kUP5Y7YUvIBLMQEqG',
+  '$2b$10$snFot1SwrY/mmNHpJMMdeuqOjLIdj2i5YsJcE.jBjS1gdLrq6/cBq',
   'super_admin',
   'System Administrator',
   'admin@medblogai.com'
@@ -38,3 +39,4 @@ ON CONFLICT (username) DO NOTHING;
 
 -- Note: Default password is 'admin123!'
 -- IMPORTANT: Change this password immediately after first login!
+-- To generate new password hash: node scripts/generate-admin-hash.js your-new-password

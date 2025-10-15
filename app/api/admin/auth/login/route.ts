@@ -41,6 +41,11 @@ export async function POST(request: NextRequest) {
 
     // Verify password
     console.log('🔑 Comparing password...');
+    console.log('🔑 Input password length:', password.length);
+    console.log('🔑 Stored hash:', admin.password_hash);
+    console.log('🔑 Hash length:', admin.password_hash?.length);
+    console.log('🔑 bcrypt module:', typeof bcrypt.compare);
+
     const passwordMatch = await bcrypt.compare(password, admin.password_hash);
     console.log('🔑 Password match result:', passwordMatch);
 
