@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       if (blogPostId && b64Image) {
         try {
           const imageBuffer = Buffer.from(b64Image, 'base64');
-          finalImageUrl = await uploadImageFromBuffer(imageBuffer, description);
+          finalImageUrl = await uploadImageFromBuffer(imageBuffer);
 
           // Extract storage path from URL for metadata
           const urlParts = finalImageUrl.split('/');
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       if (blogPostId && b64Image) {
         try {
           const imageBuffer = Buffer.from(b64Image, 'base64');
-          finalImageUrl = await uploadImageFromBuffer(imageBuffer, visualDescription);
+          finalImageUrl = await uploadImageFromBuffer(imageBuffer);
 
           // Extract storage path from URL for metadata
           const urlParts = finalImageUrl.split('/');
