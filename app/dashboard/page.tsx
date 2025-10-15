@@ -576,7 +576,7 @@ export default function DashboardPage() {
                   {generatedImages.map((image, index) => {
                     const isRegenerating = regeneratingIndices.has(index);
                     return (
-                      <div key={index} className="bg-white rounded-lg overflow-hidden shadow-md relative">
+                      <div key={`${index}-${image.url}`} className="bg-white rounded-lg overflow-hidden shadow-md relative">
                         {isRegenerating && (
                           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 rounded-lg">
                             <div className="bg-white rounded-lg p-4">
@@ -596,6 +596,7 @@ export default function DashboardPage() {
                             alt={image.keyword}
                             fill
                             className="object-contain"
+                            unoptimized
                           />
                         </div>
                         <div className="p-4">
