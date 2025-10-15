@@ -3,12 +3,10 @@ import { supabaseAdmin } from './supabase';
 /**
  * Uploads an image buffer directly to Supabase Storage
  * @param imageBuffer - The image buffer
- * @param fileName - The file name to save as (without extension)
  * @returns The public URL of the uploaded image
  */
 export async function uploadImageFromBuffer(
-  imageBuffer: Buffer,
-  fileName: string
+  imageBuffer: Buffer
 ): Promise<string> {
   try {
     console.log('📦 Uploading buffer size:', imageBuffer.length, 'bytes');
@@ -52,12 +50,10 @@ export async function uploadImageFromBuffer(
 /**
  * Downloads an image from a URL and uploads it to Supabase Storage
  * @param imageUrl - The temporary DALL-E image URL
- * @param fileName - The file name to save as (without extension)
  * @returns The public URL of the uploaded image
  */
 export async function uploadImageToStorage(
-  imageUrl: string,
-  fileName: string
+  imageUrl: string
 ): Promise<string> {
   try {
     console.log('📥 Starting image download from:', imageUrl);

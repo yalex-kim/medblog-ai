@@ -17,7 +17,7 @@ function getAdminSession(request: NextRequest) {
 // Get all blog posts for a hospital
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminSession = getAdminSession(request);
@@ -28,10 +28,12 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     const { data: posts, error } = await supabaseAdmin
       .from('blog_posts')
       .select('id, title, topic, created_at, posted_to_blog')
-      .eq('hospital_id', params.id)
+      .eq('hospital_id', id)
       .order('created_at', { ascending: false });
 
     if (error) {

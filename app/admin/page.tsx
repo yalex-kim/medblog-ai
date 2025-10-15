@@ -25,26 +25,27 @@ export default function AdminPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    checkAuthentication();
-  }, []);
-
-  const checkAuthentication = async () => {
-    try {
-      const response = await fetch('/api/admin/auth/session');
-      if (!response.ok) {
-        // Not authenticated, redirect to admin login
+    const checkAuthentication = async () => {
+      try {
+        const response = await fetch('/api/admin/auth/session');
+        if (!response.ok) {
+          // Not authenticated, redirect to admin login
+          router.replace('/admin/login');
+          return;
+        }
+        // Authenticated, fetch hospitals
+        await fetchHospitals();
+      } catch (error) {
+        console.error('Auth check error:', error);
         router.replace('/admin/login');
-        return;
+      } finally {
+        setChecking(false);
       }
-      // Authenticated, fetch hospitals
-      await fetchHospitals();
-    } catch (error) {
-      console.error('Auth check error:', error);
-      router.replace('/admin/login');
-    } finally {
-      setChecking(false);
-    }
-  };
+    };
+
+    checkAuthentication();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchHospitals = async () => {
     try {

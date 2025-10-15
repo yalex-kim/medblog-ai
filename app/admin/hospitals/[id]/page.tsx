@@ -38,25 +38,26 @@ export default function HospitalDetailPage() {
   const [editedData, setEditedData] = useState<Partial<Hospital>>({});
 
   useEffect(() => {
-    checkAuthAndFetchData();
-  }, [hospitalId]);
+    const checkAuthAndFetchData = async () => {
+      try {
+        // Check admin authentication
+        const authResponse = await fetch('/api/admin/auth/session');
+        if (!authResponse.ok) {
+          router.replace('/admin/login');
+          return;
+        }
 
-  const checkAuthAndFetchData = async () => {
-    try {
-      // Check admin authentication
-      const authResponse = await fetch('/api/admin/auth/session');
-      if (!authResponse.ok) {
+        // Fetch hospital data
+        await fetchHospitalData();
+      } catch (error) {
+        console.error('Auth check error:', error);
         router.replace('/admin/login');
-        return;
       }
+    };
 
-      // Fetch hospital data
-      await fetchHospitalData();
-    } catch (error) {
-      console.error('Auth check error:', error);
-      router.replace('/admin/login');
-    }
-  };
+    checkAuthAndFetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hospitalId]);
 
   const fetchHospitalData = async () => {
     try {

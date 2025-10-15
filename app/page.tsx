@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -21,8 +20,6 @@ export default function Home() {
       } catch (error) {
         console.error('Session check error:', error);
         router.replace('/login');
-      } finally {
-        setChecking(false);
       }
     };
 

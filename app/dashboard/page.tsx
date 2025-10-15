@@ -488,14 +488,14 @@ export default function DashboardPage() {
                 <div className="markdown-content">
                   <ReactMarkdown
                     components={{
-                      h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-0" {...props} />,
-                      h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8" {...props} />,
-                      h3: ({node, ...props}) => <h3 className="text-xl font-bold text-gray-900 mb-3 mt-6" {...props} />,
-                      p: ({node, ...props}) => <p className="text-gray-700 leading-relaxed mb-4" {...props} />,
-                      strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                      ul: ({node, ...props}) => <ul className="list-disc pl-6 my-4 space-y-2" {...props} />,
-                      ol: ({node, ...props}) => <ol className="list-decimal pl-6 my-4 space-y-2" {...props} />,
-                      li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+                      h1: ({...props}) => <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-0" {...props} />,
+                      h2: ({...props}) => <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8" {...props} />,
+                      h3: ({...props}) => <h3 className="text-xl font-bold text-gray-900 mb-3 mt-6" {...props} />,
+                      p: ({...props}) => <p className="text-gray-700 leading-relaxed mb-4" {...props} />,
+                      strong: ({...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                      ul: ({...props}) => <ul className="list-disc pl-6 my-4 space-y-2" {...props} />,
+                      ol: ({...props}) => <ol className="list-decimal pl-6 my-4 space-y-2" {...props} />,
+                      li: ({...props}) => <li className="text-gray-700" {...props} />,
                     }}
                   >
                     {blogResult.content}

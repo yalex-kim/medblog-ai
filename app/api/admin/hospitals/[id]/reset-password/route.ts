@@ -18,7 +18,7 @@ function getAdminSession(request: NextRequest) {
 // Reset hospital password
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminSession = getAdminSession(request);
@@ -29,6 +29,7 @@ export async function POST(
       );
     }
 
+    const { id } = await params;
     const { new_password } = await request.json();
 
     if (!new_password) {
@@ -49,7 +50,7 @@ export async function POST(
         must_change_password: true, // Force hospital to change on next login
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id);
+      .eq('id', id);
 
     if (error) {
       console.error('Error resetting password:', error);

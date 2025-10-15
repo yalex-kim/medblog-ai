@@ -17,7 +17,7 @@ function getAdminSession(request: NextRequest) {
 // Get hospital details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminSession = getAdminSession(request);
@@ -28,10 +28,12 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     const { data: hospital, error } = await supabaseAdmin
       .from('hospitals')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error || !hospital) {
@@ -54,7 +56,7 @@ export async function GET(
 // Update hospital details
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminSession = getAdminSession(request);
@@ -65,6 +67,7 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     const body = await request.json();
     const {
       hospital_name,
@@ -82,7 +85,7 @@ export async function PUT(
         main_services,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
