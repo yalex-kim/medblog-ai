@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const [currentTopic, setCurrentTopic] = useState('');
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatingImages, setGeneratingImages] = useState(false);
-  const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
+  const [regeneratingIndices, setRegeneratingIndices] = useState<Set<number>>(new Set());
 
   // New states for saved posts
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
@@ -285,8 +285,8 @@ export default function DashboardPage() {
   const handleRegenerateImage = async (index: number) => {
     const image = generatedImages[index];
 
-    // Set regenerating state
-    setRegeneratingIndex(index);
+    // Add index to regenerating set
+    setRegeneratingIndices(prev => new Set(prev).add(index));
 
     try {
       const response = await fetch('/api/generate-images', {
@@ -316,7 +316,12 @@ export default function DashboardPage() {
       console.error('Error regenerating image:', error);
       alert('이미지 재생성 중 오류가 발생했습니다.');
     } finally {
-      setRegeneratingIndex(null);
+      // Remove index from regenerating set
+      setRegeneratingIndices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
     }
   };
 
@@ -569,7 +574,7 @@ export default function DashboardPage() {
                 <h3 className="font-semibold text-orange-900 mb-4">생성된 이미지 ({generatedImages.length}개)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {generatedImages.map((image, index) => {
-                    const isRegenerating = regeneratingIndex === index;
+                    const isRegenerating = regeneratingIndices.has(index);
                     return (
                       <div key={index} className="bg-white rounded-lg overflow-hidden shadow-md relative">
                         {isRegenerating && (
