@@ -2,13 +2,14 @@ import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImageFromBuffer, saveImageMetadata } from '@/lib/image-storage';
 import { generateImagePrompt, parseImageType, ImageType } from '@/lib/image-prompts';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
   try {
-    const { keywords, topic, description, text, index, blogPostId } = await request.json();
+    const { keywords, topic, description, text, index, blogPostId, replaceExisting } = await request.json();
 
     console.log('🔍 Request data:', {
       hasBlogPostId: !!blogPostId,
@@ -21,6 +22,50 @@ export async function POST(request: NextRequest) {
     // Single image generation (for regeneration)
     if (description !== undefined && index !== undefined) {
       console.log('🎨 Regenerating image for:', description);
+
+      // If replaceExisting is true, delete old image first
+      if (replaceExisting && blogPostId && index !== undefined) {
+        try {
+          console.log('🗑️ Deleting old image at index:', index);
+
+          // Find and delete existing image with same blog_post_id and display_order
+          const { data: existingImages, error: fetchError } = await supabaseAdmin
+            .from('blog_images')
+            .select('id, storage_path')
+            .eq('blog_post_id', blogPostId)
+            .eq('display_order', index);
+
+          if (fetchError) {
+            console.error('Error fetching existing images:', fetchError);
+          } else if (existingImages && existingImages.length > 0) {
+            for (const img of existingImages) {
+              // Delete from storage
+              const { error: storageError } = await supabaseAdmin.storage
+                .from('blog-images')
+                .remove([img.storage_path]);
+
+              if (storageError) {
+                console.error('Error deleting from storage:', storageError);
+              }
+
+              // Delete from database
+              const { error: dbError } = await supabaseAdmin
+                .from('blog_images')
+                .delete()
+                .eq('id', img.id);
+
+              if (dbError) {
+                console.error('Error deleting from database:', dbError);
+              } else {
+                console.log('✅ Deleted old image:', img.id);
+              }
+            }
+          }
+        } catch (deleteError) {
+          console.error('Error during image deletion:', deleteError);
+          // Continue with generation even if deletion fails
+        }
+      }
 
       // Parse image type from description
       const { type, description: cleanDescription } = parseImageType(description);
