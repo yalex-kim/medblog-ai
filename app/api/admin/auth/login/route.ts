@@ -6,7 +6,10 @@ export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
 
+    console.log('🔐 Admin login attempt:', { username, hasPassword: !!password });
+
     if (!username || !password) {
+      console.log('❌ Missing credentials');
       return NextResponse.json(
         { error: 'ID와 비밀번호를 입력해주세요.' },
         { status: 400 }
@@ -21,7 +24,15 @@ export async function POST(request: NextRequest) {
       .eq('is_active', true)
       .single();
 
+    console.log('👤 Admin query result:', {
+      found: !!admin,
+      error: error?.message,
+      username: admin?.username,
+      hasHash: !!admin?.password_hash
+    });
+
     if (error || !admin) {
+      console.log('❌ Admin not found or error:', error);
       return NextResponse.json(
         { error: '잘못된 관리자 ID 또는 비밀번호입니다.' },
         { status: 401 }
@@ -29,9 +40,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
+    console.log('🔑 Comparing password...');
     const passwordMatch = await bcrypt.compare(password, admin.password_hash);
+    console.log('🔑 Password match result:', passwordMatch);
 
     if (!passwordMatch) {
+      console.log('❌ Password mismatch');
       return NextResponse.json(
         { error: '잘못된 관리자 ID 또는 비밀번호입니다.' },
         { status: 401 }
