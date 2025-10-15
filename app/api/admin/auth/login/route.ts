@@ -4,9 +4,16 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password } = await request.json();
+    const body = await request.json();
+    const username = body.username?.trim();
+    const password = body.password?.trim();
 
-    console.log('🔐 Admin login attempt:', { username, hasPassword: !!password });
+    console.log('🔐 Admin login attempt:', {
+      username,
+      hasPassword: !!password,
+      passwordLength: password?.length,
+      passwordChars: password?.split('').map(c => c.charCodeAt(0))
+    });
 
     if (!username || !password) {
       console.log('❌ Missing credentials');
