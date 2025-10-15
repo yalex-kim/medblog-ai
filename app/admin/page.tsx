@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Hospital {
   id: string;
@@ -12,8 +13,10 @@ interface Hospital {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [hospitalId, setHospitalId] = useState('');
   const [initialPassword, setInitialPassword] = useState('');
@@ -22,8 +25,26 @@ export default function AdminPage() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchHospitals();
+    checkAuthentication();
   }, []);
+
+  const checkAuthentication = async () => {
+    try {
+      const response = await fetch('/api/admin/auth/session');
+      if (!response.ok) {
+        // Not authenticated, redirect to admin login
+        router.replace('/admin/login');
+        return;
+      }
+      // Authenticated, fetch hospitals
+      await fetchHospitals();
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.replace('/admin/login');
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const fetchHospitals = async () => {
     try {
@@ -78,13 +99,38 @@ export default function AdminPage() {
     }
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/admin/auth/logout', { method: 'POST' });
+    router.push('/admin/login');
+  };
+
+  // Show loading while checking authentication
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-900">인증 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            관리자 - 병원 관리
-          </h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900">
+              관리자 - 병원 관리
+            </h1>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300"
+            >
+              로그아웃
+            </button>
+          </div>
         </div>
       </header>
 

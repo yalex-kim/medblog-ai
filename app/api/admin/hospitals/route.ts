@@ -2,9 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 
+function getAdminSession(request: NextRequest) {
+  const session = request.cookies.get('admin_session')?.value;
+  if (!session) return null;
+  try {
+    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
+    if (sessionData.exp < Date.now()) return null;
+    if (sessionData.type !== 'admin') return null;
+    return sessionData;
+  } catch {
+    return null;
+  }
+}
+
 // Admin creates a new hospital account
 export async function POST(request: NextRequest) {
   try {
+    // Check admin authentication
+    const adminSession = getAdminSession(request);
+    if (!adminSession) {
+      return NextResponse.json(
+        { error: '관리자 권한이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+
     const { hospital_id, initial_password, department = '산부인과' } = await request.json();
 
     if (!hospital_id || !initial_password) {
@@ -72,8 +94,17 @@ export async function POST(request: NextRequest) {
 }
 
 // Admin gets list of all hospitals
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Check admin authentication
+    const adminSession = getAdminSession(request);
+    if (!adminSession) {
+      return NextResponse.json(
+        { error: '관리자 권한이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+
     const { data, error } = await supabaseAdmin
       .from('hospitals')
       .select('id, hospital_id, hospital_name, department, is_initial_setup_complete, created_at')
