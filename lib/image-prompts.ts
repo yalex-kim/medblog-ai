@@ -85,15 +85,15 @@ export function generateImagePrompt(
     ? `Include large, clear Korean text overlay: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background.`
     : 'Do not include any text overlay in this image.';
 
-  // 🎯 INTRO 및 LIFESTYLE 타입일 경우만 “의학 장식 제거” 문장 추가
-  const backgroundInstruction =
+  // 🎯 INTRO / LIFESTYLE에서는 병원 문구 제거
+  const contextInstruction =
     type === 'INTRO' || type === 'LIFESTYLE'
-      ? `The background should be simple, cozy, and realistic with no medical posters, charts, anatomical drawings, or wall decorations. 
-Focus on a human-centered, warm environment such as a home, lounge, or natural setting rather than a hospital.`
-      : '';
+      ? ''
+      : `Create an image for a Korean obstetrics and gynecology hospital blog post about "${topic}".`;
+
 
   return `
-Create an image for a Korean obstetrics and gynecology hospital blog post about "${topic}".
+${contextInstruction}
 
 Visual Content:
 ${visualDescription}
@@ -104,8 +104,6 @@ Style Guidelines:
 - Mood: ${template.mood}
 - Key Visual Elements: ${template.elements}
 ${template.camera ? `- Camera & Realism: ${template.camera}` : ''}
-
-${backgroundInstruction}
 
 ${textInstruction}
 
