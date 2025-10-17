@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
             text: img.text_content,
             url: img.public_url,
             prompt: img.prompt,
+            type: img.image_type,
           })),
         };
       })

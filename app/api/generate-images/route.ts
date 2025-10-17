@@ -106,7 +106,8 @@ export async function POST(request: NextRequest) {
             storagePath,
             finalImageUrl,
             prompt,
-            index // Pass order index
+            index, // Pass order index
+            type // Pass image type
           );
 
           console.log('✅ Image uploaded to storage:', finalImageUrl);
@@ -185,7 +186,8 @@ export async function POST(request: NextRequest) {
             storagePath,
             finalImageUrl,
             prompt,
-            idx // Pass order index
+            idx, // Pass order index
+            type // Pass image type
           );
 
           console.log('✅ Image uploaded to storage:', finalImageUrl);

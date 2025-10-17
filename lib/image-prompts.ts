@@ -14,7 +14,7 @@ interface PromptTemplate {
 
 const PROMPT_TEMPLATES: Record<ImageType, PromptTemplate> = {
   INTRO: {
-    style: 'Warm, comforting, patient-centered illustration',
+    style: 'Warm, comforting, patient-centered natural photo',
     colors: 'Soft pastel colors (peach, lavender, mint green)',
     mood: 'Calm, empathetic, reassuring atmosphere',
     elements: 'Gentle lighting, soft focus, peaceful ambiance, relatable characters',
@@ -28,7 +28,7 @@ const PROMPT_TEMPLATES: Record<ImageType, PromptTemplate> = {
   },
 
   LIFESTYLE: {
-    style: 'Practical, everyday life illustration',
+    style: 'Practical, everyday life natural photo',
     colors: 'Bright, energetic colors (fresh greens, sunny yellows, light blues)',
     mood: 'Encouraging, active, positive energy',
     elements: 'Realistic everyday scenarios, actionable steps shown visually, relatable situations',
@@ -89,9 +89,7 @@ Style Guidelines:
 ${textInstruction}
 
 Technical Requirements:
-- Professional medical illustration quality
-- Suitable for social media card news format
-- Clean, modern Korean hospital aesthetic
+- If style is illustration, it needs Professional medical illustration quality
 - If text is included, use a clean sans-serif Korean font with excellent legibility
 - Maintain warm, patient-friendly approach while being professional`;
 }

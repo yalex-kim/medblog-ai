@@ -58,5 +58,7 @@ export interface BlogImage {
   storage_path: string;
   public_url: string;
   prompt: string | null;
+  image_type: string | null;
+  display_order: number | null;
   created_at: string;
 }

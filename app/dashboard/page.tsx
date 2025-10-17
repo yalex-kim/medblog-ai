@@ -11,6 +11,7 @@ interface Topics {
 }
 
 interface ImageSuggestion {
+  type: string;
   description: string;
   text: string;
 }
@@ -26,6 +27,13 @@ interface GeneratedImage {
   text?: string;
   url: string;
   prompt: string;
+  type?: string;
+}
+
+interface EditableImagePrompt {
+  type: string;
+  description: string;
+  text: string;
 }
 
 interface SavedPost {
@@ -52,6 +60,8 @@ export default function DashboardPage() {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [generatingImages, setGeneratingImages] = useState(false);
   const [regeneratingIndices, setRegeneratingIndices] = useState<Set<number>>(new Set());
+  const [imagePrompts, setImagePrompts] = useState<EditableImagePrompt[]>([]);
+  const [editingPrompts, setEditingPrompts] = useState(false);
 
   // New states for saved posts
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
@@ -129,18 +139,25 @@ export default function DashboardPage() {
     console.log('Image keywords:', post.image_keywords);
     console.log('Saved images:', post.images);
 
-    // Extract image suggestions from content if they exist
+    // Extract image suggestions from content if they exist (new format)
     const imageSuggestions: ImageSuggestion[] = [];
-    const imageRegex = /\[이미지:([^\|\]]+)(?:\|([^\]]+))?\]/g;
+    const imageRegex = /\[([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
     let match;
 
     while ((match = imageRegex.exec(post.content)) !== null) {
-      const visualDescription = match[1].trim();
-      const textContent = match[2] ? match[2].trim() : '';
+      const imageType = match[1].trim();
+      const visualDescription = match[2].trim();
+      const textContent = match[3] ? match[3].trim() : '';
       imageSuggestions.push({
+        type: imageType,
         description: visualDescription,
         text: textContent,
       });
+    }
+
+    // Limit to 5 images
+    if (imageSuggestions.length > 5) {
+      imageSuggestions.splice(5);
     }
 
     console.log('Extracted image suggestions from content:', imageSuggestions);
@@ -157,6 +174,10 @@ export default function DashboardPage() {
     setCurrentPostId(post.id);
     setEditedContent(post.content);
     setIsEditMode(false);
+
+    // Initialize image prompts from suggestions
+    setImagePrompts(imageSuggestions.length > 0 ? imageSuggestions : []);
+    setEditingPrompts(false);
 
     // Load saved images if they exist
     setGeneratedImages(post.images || []);
@@ -188,6 +209,10 @@ export default function DashboardPage() {
         if (data.blogPostId) {
           setCurrentPostId(data.blogPostId);
         }
+        // Initialize image prompts from suggestions (limit to 5)
+        const suggestions = data.imageSuggestions || [];
+        setImagePrompts(suggestions.slice(0, 5));
+        setEditingPrompts(false);
         // Refresh saved posts list
         fetchSavedPosts();
         // Add to browser history so back button works
@@ -241,13 +266,9 @@ export default function DashboardPage() {
   };
 
   const handleGenerateImages = async () => {
-    // Use imageSuggestions if available, otherwise fall back to imageKeywords
-    const suggestions = blogResult?.imageSuggestions && blogResult.imageSuggestions.length > 0
-      ? blogResult.imageSuggestions
-      : blogResult?.imageKeywords || [];
-
-    if (suggestions.length === 0) {
-      alert('이미지 제안이 없습니다.');
+    // Use imagePrompts (limited to 5)
+    if (imagePrompts.length === 0) {
+      alert('이미지 프롬프트가 없습니다.');
       return;
     }
 
@@ -258,7 +279,7 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          keywords: suggestions,
+          keywords: imagePrompts,
           topic: currentTopic,
           blogPostId: currentPostId,
         }),
@@ -284,6 +305,11 @@ export default function DashboardPage() {
 
   const handleRegenerateImage = async (index: number) => {
     const image = generatedImages[index];
+
+    // Show confirmation dialog
+    if (!confirm('이미지를 재생성하시겠습니까? 기존 이미지는 삭제됩니다.')) {
+      return;
+    }
 
     // Add index to regenerating set
     setRegeneratingIndices(prev => new Set(prev).add(index));
@@ -569,11 +595,111 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {/* Image Prompts Section */}
+            {imagePrompts.length > 0 && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-purple-900">이미지 프롬프트 ({imagePrompts.length}/5)</h3>
+                  <button
+                    onClick={() => setEditingPrompts(!editingPrompts)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                  >
+                    {editingPrompts ? '완료' : '편집'}
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  {imagePrompts.map((prompt, index) => (
+                    <div key={index} className="bg-white rounded-lg p-4 border border-purple-100">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600 uppercase">Type</label>
+                            {editingPrompts ? (
+                              <select
+                                value={prompt.type}
+                                onChange={(e) => {
+                                  const newPrompts = [...imagePrompts];
+                                  newPrompts[index].type = e.target.value;
+                                  setImagePrompts(newPrompts);
+                                }}
+                                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              >
+                                <option value="INTRO">INTRO</option>
+                                <option value="MEDICAL">MEDICAL</option>
+                                <option value="LIFESTYLE">LIFESTYLE</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="CTA">CTA</option>
+                                <option value="INFOGRAPHIC">INFOGRAPHIC</option>
+                              </select>
+                            ) : (
+                              <div className="mt-1 px-3 py-2 bg-purple-100 text-purple-900 rounded-lg text-sm font-semibold inline-block">
+                                {prompt.type}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-gray-600 uppercase">이미지 묘사</label>
+                            {editingPrompts ? (
+                              <textarea
+                                value={prompt.description}
+                                onChange={(e) => {
+                                  const newPrompts = [...imagePrompts];
+                                  newPrompts[index].description = e.target.value;
+                                  setImagePrompts(newPrompts);
+                                }}
+                                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                rows={2}
+                              />
+                            ) : (
+                              <p className="mt-1 text-gray-900 text-sm">{prompt.description}</p>
+                            )}
+                          </div>
+                          {(prompt.type !== 'INTRO' && prompt.type !== 'LIFESTYLE') && (
+                            <div>
+                              <label className="text-xs font-semibold text-gray-600 uppercase">텍스트 (이미지에 들어갈 텍스트)</label>
+                              {editingPrompts ? (
+                                <input
+                                  type="text"
+                                  value={prompt.text}
+                                  onChange={(e) => {
+                                    const newPrompts = [...imagePrompts];
+                                    newPrompts[index].text = e.target.value;
+                                    setImagePrompts(newPrompts);
+                                  }}
+                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                />
+                              ) : (
+                                <p className="mt-1 text-blue-600 font-medium text-sm">{prompt.text || '(없음)'}</p>
+                              )}
+                            </div>
+                          )}
+                          {generatedImages[index] && (
+                            <div className="pt-2 border-t border-gray-200">
+                              <button
+                                onClick={() => handleRegenerateImage(index)}
+                                disabled={regeneratingIndices.has(index)}
+                                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:bg-gray-400"
+                              >
+                                {regeneratingIndices.has(index) ? '생성 중...' : '이 프롬프트로 이미지 생성'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {generatedImages.length > 0 && (
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-                <h3 className="font-semibold text-orange-900 mb-4">생성된 이미지 ({generatedImages.length}개)</h3>
+                <h3 className="font-semibold text-orange-900 mb-4">생성된 이미지 ({generatedImages.slice(0, 5).length}/5개)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {generatedImages.map((image, index) => {
+                  {generatedImages.slice(0, 5).map((image, index) => {
                     const isRegenerating = regeneratingIndices.has(index);
                     return (
                       <div key={`${index}-${image.url}`} className="bg-white rounded-lg overflow-hidden shadow-md relative">
@@ -600,6 +726,13 @@ export default function DashboardPage() {
                           />
                         </div>
                         <div className="p-4">
+                          {image.type && (
+                            <div className="mb-2">
+                              <span className="inline-block px-2 py-1 bg-purple-100 text-purple-900 text-xs font-semibold rounded">
+                                {image.type}
+                              </span>
+                            </div>
+                          )}
                           <h4 className="font-medium text-gray-900 mb-1">{image.keyword}</h4>
                           {image.text && (
                             <p className="text-sm text-blue-600 mb-3 font-medium">📝 {image.text}</p>
