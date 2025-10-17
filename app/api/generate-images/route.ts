@@ -24,16 +24,16 @@ export async function POST(request: NextRequest) {
       console.log('🎨 Regenerating image for:', description);
 
       // If replaceExisting is true, delete old image first
-      if (replaceExisting && blogPostId && promptId) {
+      if (replaceExisting && blogPostId && index !== undefined) {
         try {
-          console.log('🗑️ Deleting old image with prompt_id:', promptId);
+          console.log('🗑️ Deleting old image at index:', index);
 
-          // Find and delete existing image with same blog_post_id and prompt_id
+          // Find and delete existing image with same blog_post_id and display_order
           const { data: existingImages, error: fetchError } = await supabaseAdmin
             .from('blog_images')
             .select('id, storage_path')
             .eq('blog_post_id', blogPostId)
-            .eq('prompt_id', promptId);
+            .eq('display_order', index);
 
           if (fetchError) {
             console.error('Error fetching existing images:', fetchError);
@@ -78,7 +78,6 @@ export async function POST(request: NextRequest) {
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        style: "natural",
       });
 
       // gpt-image-1 returns b64_json by default
@@ -161,7 +160,6 @@ export async function POST(request: NextRequest) {
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        style: "natural",
       });
 
       // gpt-image-1 returns b64_json by default
