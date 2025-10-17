@@ -14,7 +14,7 @@ interface PromptTemplate {
 
 const PROMPT_TEMPLATES: Record<ImageType, PromptTemplate> = {
   INTRO: {
-    style: 'Warm, comforting, patient-centered natural photo captured with a DSLR camera',
+    style: 'Natural photo captured with a DSLR camera(not illustration, not paint)',
     colors: 'Soft pastel colors (peach, lavender, mint green)',
     mood: 'Calm, empathetic, reassuring atmosphere',
     elements: 'Gentle lighting, soft focus, peaceful ambiance, relatable characters',
@@ -28,7 +28,7 @@ const PROMPT_TEMPLATES: Record<ImageType, PromptTemplate> = {
   },
 
   LIFESTYLE: {
-    style: 'Practical, everyday life natural photo captured with a DSLR camera',
+    style: 'Natural photo captured with a DSLR camera(not illustration, not paint)',
     colors: 'Bright, energetic colors (fresh greens, sunny yellows, light blues)',
     mood: 'Encouraging, active, positive energy',
     elements: 'Realistic everyday scenarios, actionable steps shown visually, relatable situations',
