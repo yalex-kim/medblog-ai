@@ -248,7 +248,32 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        setBlogResult({ ...blogResult!, content: editedContent });
+        // Re-parse image prompts from edited content
+        const imageSuggestions: ImageSuggestion[] = [];
+        const imageRegex = /\[#(\d+)\s*\|\s*([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
+        let match;
+
+        while ((match = imageRegex.exec(editedContent)) !== null) {
+          const promptId = match[1].trim();
+          const imageType = match[2].trim();
+          const visualDescription = match[3].trim();
+          const textContent = match[4] ? match[4].trim() : '';
+          imageSuggestions.push({
+            id: promptId,
+            type: imageType,
+            description: visualDescription,
+            text: textContent,
+          });
+        }
+
+        // Limit to 5 images
+        if (imageSuggestions.length > 5) {
+          imageSuggestions.splice(5);
+        }
+
+        // Update blog result and image prompts
+        setBlogResult({ ...blogResult!, content: editedContent, imageSuggestions });
+        setImagePrompts(imageSuggestions);
         setIsEditMode(false);
         alert('저장되었습니다!');
         fetchSavedPosts();
@@ -597,152 +622,138 @@ export default function DashboardPage() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {imagePrompts.map((prompt, index) => (
-                    <div key={index} className="bg-white rounded-lg p-4 border border-purple-100">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <div>
-                            <label className="text-xs font-semibold text-gray-600 uppercase">Type</label>
-                            {editingPrompts ? (
-                              <select
-                                value={prompt.type}
-                                onChange={(e) => {
-                                  const newPrompts = [...imagePrompts];
-                                  newPrompts[index].type = e.target.value;
-                                  setImagePrompts(newPrompts);
-                                }}
-                                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                              >
-                                <option value="INTRO">INTRO</option>
-                                <option value="MEDICAL">MEDICAL</option>
-                                <option value="LIFESTYLE">LIFESTYLE</option>
-                                <option value="WARNING">WARNING</option>
-                                <option value="CTA">CTA</option>
-                                <option value="INFOGRAPHIC">INFOGRAPHIC</option>
-                              </select>
-                            ) : (
-                              <div className="mt-1 px-3 py-2 bg-purple-100 text-purple-900 rounded-lg text-sm font-semibold inline-block">
-                                {prompt.type}
+                  {imagePrompts.map((prompt, index) => {
+                    const image = generatedImages[index];
+                    const isRegenerating = regeneratingIndices.has(index);
+
+                    return (
+                      <div key={index} className="bg-white rounded-lg p-4 border border-purple-100">
+                        <div className="flex items-start gap-4">
+                          {/* Left side: Prompt info (2/3 width) */}
+                          <div className="flex-1 flex items-start gap-3" style={{ flex: '0 0 66%' }}>
+                            <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 uppercase">Type</label>
+                                {editingPrompts ? (
+                                  <select
+                                    value={prompt.type}
+                                    onChange={(e) => {
+                                      const newPrompts = [...imagePrompts];
+                                      newPrompts[index].type = e.target.value;
+                                      setImagePrompts(newPrompts);
+                                    }}
+                                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  >
+                                    <option value="INTRO">INTRO</option>
+                                    <option value="MEDICAL">MEDICAL</option>
+                                    <option value="LIFESTYLE">LIFESTYLE</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="CTA">CTA</option>
+                                    <option value="INFOGRAPHIC">INFOGRAPHIC</option>
+                                  </select>
+                                ) : (
+                                  <div className="mt-1 px-3 py-2 bg-purple-100 text-purple-900 rounded-lg text-sm font-semibold inline-block">
+                                    {prompt.type}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                          <div>
-                            <label className="text-xs font-semibold text-gray-600 uppercase">이미지 묘사</label>
-                            {editingPrompts ? (
-                              <textarea
-                                value={prompt.description}
-                                onChange={(e) => {
-                                  const newPrompts = [...imagePrompts];
-                                  newPrompts[index].description = e.target.value;
-                                  setImagePrompts(newPrompts);
-                                }}
-                                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                rows={2}
-                              />
-                            ) : (
-                              <p className="mt-1 text-gray-900 text-sm">{prompt.description}</p>
-                            )}
-                          </div>
-                          {(prompt.type !== 'INTRO' && prompt.type !== 'LIFESTYLE') && (
-                            <div>
-                              <label className="text-xs font-semibold text-gray-600 uppercase">텍스트 (이미지에 들어갈 텍스트)</label>
-                              {editingPrompts ? (
-                                <input
-                                  type="text"
-                                  value={prompt.text}
-                                  onChange={(e) => {
-                                    const newPrompts = [...imagePrompts];
-                                    newPrompts[index].text = e.target.value;
-                                    setImagePrompts(newPrompts);
-                                  }}
-                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                />
-                              ) : (
-                                <p className="mt-1 text-blue-600 font-medium text-sm">{prompt.text || '(없음)'}</p>
+                              <div>
+                                <label className="text-xs font-semibold text-gray-600 uppercase">이미지 묘사</label>
+                                {editingPrompts ? (
+                                  <textarea
+                                    value={prompt.description}
+                                    onChange={(e) => {
+                                      const newPrompts = [...imagePrompts];
+                                      newPrompts[index].description = e.target.value;
+                                      setImagePrompts(newPrompts);
+                                    }}
+                                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    rows={2}
+                                  />
+                                ) : (
+                                  <p className="mt-1 text-gray-900 text-sm">{prompt.description}</p>
+                                )}
+                              </div>
+                              {(prompt.type !== 'INTRO' && prompt.type !== 'LIFESTYLE') && (
+                                <div>
+                                  <label className="text-xs font-semibold text-gray-600 uppercase">텍스트</label>
+                                  {editingPrompts ? (
+                                    <input
+                                      type="text"
+                                      value={prompt.text}
+                                      onChange={(e) => {
+                                        const newPrompts = [...imagePrompts];
+                                        newPrompts[index].text = e.target.value;
+                                        setImagePrompts(newPrompts);
+                                      }}
+                                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    />
+                                  ) : (
+                                    <p className="mt-1 text-blue-600 font-medium text-sm">{prompt.text || '(없음)'}</p>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
-                          {generatedImages[index] && (
-                            <div className="pt-2 border-t border-gray-200">
+                          </div>
+
+                          {/* Right side: Image preview and buttons (1/3 width) */}
+                          <div className="flex-shrink-0 space-y-2" style={{ flex: '0 0 32%' }}>
+                            {image ? (
+                              <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                {isRegenerating && (
+                                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                                    <div className="bg-white rounded-lg p-3">
+                                      <svg className="animate-spin h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                    </div>
+                                  </div>
+                                )}
+                                <Image
+                                  src={image.url}
+                                  alt={image.keyword}
+                                  fill
+                                  className="object-contain"
+                                  unoptimized
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-full aspect-square bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                                <p className="text-gray-400 text-sm text-center px-2">이미지 없음</p>
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-2">
                               <button
                                 onClick={() => handleRegenerateImage(index)}
-                                disabled={regeneratingIndices.has(index)}
-                                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:bg-gray-400"
+                                disabled={isRegenerating}
+                                className="w-full px-3 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 disabled:bg-gray-400"
                               >
-                                {regeneratingIndices.has(index) ? '생성 중...' : '이 프롬프트로 이미지 생성'}
+                                {isRegenerating ? '생성 중...' : '이미지 생성'}
                               </button>
+                              {image && (
+                                <a
+                                  href={image.url}
+                                  download={`${image.keyword}.png`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-full text-center px-3 py-2 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700"
+                                >
+                                  다운로드
+                                </a>
+                              )}
+                              {!image && (
+                                <button
+                                  disabled
+                                  className="w-full px-3 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm cursor-not-allowed"
+                                >
+                                  다운로드
+                                </button>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {generatedImages.length > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-                <h3 className="font-semibold text-orange-900 mb-4">생성된 이미지 ({generatedImages.slice(0, 5).length}/5개)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {generatedImages.slice(0, 5).map((image, index) => {
-                    const isRegenerating = regeneratingIndices.has(index);
-                    return (
-                      <div key={`${index}-${image.url}`} className="bg-white rounded-lg overflow-hidden shadow-md relative">
-                        {isRegenerating && (
-                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 rounded-lg">
-                            <div className="bg-white rounded-lg p-4">
-                              <div className="flex flex-col items-center">
-                                <svg className="animate-spin h-8 w-8 text-purple-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <p className="text-gray-900 text-sm font-medium">재생성 중...</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        <div className="relative w-full aspect-square">
-                          <Image
-                            src={image.url}
-                            alt={image.keyword}
-                            fill
-                            className="object-contain"
-                            unoptimized
-                          />
-                        </div>
-                        <div className="p-4">
-                          {image.type && (
-                            <div className="mb-2">
-                              <span className="inline-block px-2 py-1 bg-purple-100 text-purple-900 text-xs font-semibold rounded">
-                                {image.type}
-                              </span>
-                            </div>
-                          )}
-                          <h4 className="font-medium text-gray-900 mb-1">{image.keyword}</h4>
-                          {image.text && (
-                            <p className="text-sm text-blue-600 mb-3 font-medium">📝 {image.text}</p>
-                          )}
-                          <div className="flex gap-2">
-                            <a
-                              href={image.url}
-                              download={`${image.keyword}.png`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 text-center bg-orange-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-700"
-                            >
-                              다운로드
-                            </a>
-                            <button
-                              onClick={() => handleRegenerateImage(index)}
-                              disabled={isRegenerating}
-                              className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            >
-                              {isRegenerating ? '생성 중...' : '재생성'}
-                            </button>
                           </div>
                         </div>
                       </div>
