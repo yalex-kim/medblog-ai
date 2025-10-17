@@ -89,7 +89,6 @@ Style Guidelines:
 ${textInstruction}
 
 Technical Requirements:
-- If style is illustration, it needs Professional medical illustration quality
 - If text is included, use a clean sans-serif Korean font with excellent legibility
 - Maintain warm, patient-friendly approach while being professional`;
 }
