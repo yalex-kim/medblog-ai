@@ -336,8 +336,8 @@ export default function DashboardPage() {
     const image = generatedImages[index];
     const prompt = imagePrompts[index];
 
-    // Show confirmation dialog
-    if (!confirm('이미지를 재생성하시겠습니까? 기존 이미지는 삭제됩니다.')) {
+    // Show confirmation dialog only if image exists
+    if (image && !confirm('이미지를 재생성하시겠습니까? 기존 이미지는 삭제됩니다.')) {
       return;
     }
 
