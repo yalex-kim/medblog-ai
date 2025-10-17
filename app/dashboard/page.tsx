@@ -11,6 +11,7 @@ interface Topics {
 }
 
 interface ImageSuggestion {
+  id: string;
   type: string;
   description: string;
   text: string;
@@ -31,6 +32,7 @@ interface GeneratedImage {
 }
 
 interface EditableImagePrompt {
+  id: string;
   type: string;
   description: string;
   text: string;
@@ -139,16 +141,18 @@ export default function DashboardPage() {
     console.log('Image keywords:', post.image_keywords);
     console.log('Saved images:', post.images);
 
-    // Extract image suggestions from content if they exist (new format)
+    // Extract image suggestions from content if they exist (new format with IDs)
     const imageSuggestions: ImageSuggestion[] = [];
-    const imageRegex = /\[([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
+    const imageRegex = /\[#(\d+)\s*\|\s*([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
     let match;
 
     while ((match = imageRegex.exec(post.content)) !== null) {
-      const imageType = match[1].trim();
-      const visualDescription = match[2].trim();
-      const textContent = match[3] ? match[3].trim() : '';
+      const promptId = match[1].trim();
+      const imageType = match[2].trim();
+      const visualDescription = match[3].trim();
+      const textContent = match[4] ? match[4].trim() : '';
       imageSuggestions.push({
+        id: promptId,
         type: imageType,
         description: visualDescription,
         text: textContent,
@@ -305,6 +309,7 @@ export default function DashboardPage() {
 
   const handleRegenerateImage = async (index: number) => {
     const image = generatedImages[index];
+    const prompt = imagePrompts[index];
 
     // Show confirmation dialog
     if (!confirm('이미지를 재생성하시겠습니까? 기존 이미지는 삭제됩니다.')) {
@@ -319,12 +324,13 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          description: image.keyword,
-          text: image.text || '',
+          description: prompt.description,
+          text: prompt.text || '',
           topic: currentTopic,
           index,
           blogPostId: currentPostId,
           replaceExisting: true, // Tell API to delete old image
+          promptId: prompt.id, // Pass prompt ID
         }),
       });
 

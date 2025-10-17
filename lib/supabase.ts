@@ -59,6 +59,7 @@ export interface BlogImage {
   public_url: string;
   prompt: string | null;
   image_type: string | null;
+  prompt_id: string | null;
   display_order: number | null;
   created_at: string;
 }

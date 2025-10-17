@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     apiKey: process.env.OPENAI_API_KEY,
   });
   try {
-    const { keywords, topic, description, text, index, blogPostId, replaceExisting } = await request.json();
+    const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId } = await request.json();
 
     console.log('🔍 Request data:', {
       hasBlogPostId: !!blogPostId,
@@ -24,16 +24,16 @@ export async function POST(request: NextRequest) {
       console.log('🎨 Regenerating image for:', description);
 
       // If replaceExisting is true, delete old image first
-      if (replaceExisting && blogPostId && index !== undefined) {
+      if (replaceExisting && blogPostId && promptId) {
         try {
-          console.log('🗑️ Deleting old image at index:', index);
+          console.log('🗑️ Deleting old image with prompt_id:', promptId);
 
-          // Find and delete existing image with same blog_post_id and display_order
+          // Find and delete existing image with same blog_post_id and prompt_id
           const { data: existingImages, error: fetchError } = await supabaseAdmin
             .from('blog_images')
             .select('id, storage_path')
             .eq('blog_post_id', blogPostId)
-            .eq('display_order', index);
+            .eq('prompt_id', promptId);
 
           if (fetchError) {
             console.error('Error fetching existing images:', fetchError);
@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
             finalImageUrl,
             prompt,
             index, // Pass order index
-            type // Pass image type
+            type, // Pass image type
+            promptId // Pass prompt ID
           );
 
           console.log('✅ Image uploaded to storage:', finalImageUrl);
@@ -139,11 +140,12 @@ export async function POST(request: NextRequest) {
     console.log('🎨 Generating images for keywords:', keywords);
 
     // Generate images for each keyword
-    const imagePromises = keywords.map(async (keyword: string | {type?: string, description: string, text: string}, idx: number) => {
+    const imagePromises = keywords.map(async (keyword: string | {type?: string, description: string, text: string, id?: string}, idx: number) => {
       // Handle both string and object formats
       const visualDescription = typeof keyword === 'string' ? keyword : keyword.description;
       const textContent = typeof keyword === 'object' && keyword !== null ? keyword.text : '';
       const imageType = typeof keyword === 'object' && keyword !== null && keyword.type ? keyword.type : '';
+      const promptId = typeof keyword === 'object' && keyword !== null && keyword.id ? keyword.id : undefined;
 
       // Parse image type from description (supports both TYPE|description format and separate type field)
       const { type, description: cleanDescription } = imageType
@@ -187,7 +189,8 @@ export async function POST(request: NextRequest) {
             finalImageUrl,
             prompt,
             idx, // Pass order index
-            type // Pass image type
+            type, // Pass image type
+            promptId // Pass prompt ID
           );
 
           console.log('✅ Image uploaded to storage:', finalImageUrl);

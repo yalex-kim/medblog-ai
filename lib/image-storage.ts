@@ -121,7 +121,8 @@ export async function saveImageMetadata(
   publicUrl: string,
   prompt: string,
   order?: number,
-  imageType?: string
+  imageType?: string,
+  promptId?: string
 ) {
   const { error } = await supabaseAdmin
     .from('blog_images')
@@ -134,6 +135,7 @@ export async function saveImageMetadata(
       prompt,
       display_order: order,
       image_type: imageType,
+      prompt_id: promptId,
     });
 
   if (error) {
