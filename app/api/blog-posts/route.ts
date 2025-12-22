@@ -46,6 +46,8 @@ export async function GET(request: NextRequest) {
             url: img.public_url,
             prompt: img.prompt,
             type: img.image_type,
+            displayOrder: img.display_order,
+            promptId: img.prompt_id,
           })),
         };
       })

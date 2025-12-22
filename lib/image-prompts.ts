@@ -85,14 +85,18 @@ export function generateImagePrompt(
     ? `Include large, clear Korean text overlay: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background.`
     : 'Do not include any text overlay in this image.';
 
-  // 🎯 INTRO / LIFESTYLE에서는 병원 문구 제거
+  // Medical/educational context for all types
+  const medicalContext = `MEDICAL EDUCATIONAL CONTENT: This is a professional medical illustration for patient education and healthcare information purposes at a women's health clinic.`;
+
   const contextInstruction =
     type === 'INTRO' || type === 'LIFESTYLE'
-      ? ''
-      : `Create an image for a Korean obstetrics and gynecology hospital blog post about "${topic}".`;
+      ? `Create an educational health and wellness image for a blog post about "${topic}".`
+      : `Create a medical educational image for a Korean obstetrics and gynecology hospital blog post about "${topic}".`;
 
 
   return `
+${medicalContext}
+
 ${contextInstruction}
 
 Visual Content:
@@ -108,9 +112,12 @@ ${template.camera ? `- Camera & Realism: ${template.camera}` : ''}
 ${textInstruction}
 
 Technical Requirements:
-- Maintain a warm, patient-friendly, and professional tone
-- If the image includes people, ensure natural skin tones and realistic proportions
+- This image is for medical education and patient information purposes only
+- Content must be clinically accurate, professionally appropriate, and suitable for healthcare settings
+- Maintain a warm, patient-friendly, and professional medical tone
+- If the image includes people, ensure natural skin tones, realistic proportions, and appropriate medical context
 - Use soft, natural lighting and avoid any cartoonish or painterly effects
+- Focus on educational value and clinical accuracy
 `;
 }
 
