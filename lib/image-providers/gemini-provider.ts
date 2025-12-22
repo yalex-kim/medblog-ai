@@ -35,7 +35,7 @@ export class GeminiImageProvider implements ImageGenerationProvider {
     }
 
     for (const part of parts) {
-      if (part.inlineData) {
+      if (part.inlineData && part.inlineData.data) {
         return {
           imageData: part.inlineData.data,
           mimeType: part.inlineData.mimeType || 'image/png',
