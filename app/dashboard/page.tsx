@@ -183,8 +183,22 @@ export default function DashboardPage() {
     setImagePrompts(imageSuggestions.length > 0 ? imageSuggestions : []);
     setEditingPrompts(false);
 
-    // Load saved images if they exist
-    setGeneratedImages(post.images || []);
+    // Load saved images if they exist and place them at correct indices
+    if (post.images && post.images.length > 0 && imageSuggestions.length > 0) {
+      // Create array with empty slots matching prompts count
+      const imageArray: GeneratedImage[] = new Array(imageSuggestions.length);
+
+      // Place each image at its correct index based on displayOrder
+      post.images.forEach((img: GeneratedImage & { displayOrder?: number; promptId?: string }) => {
+        if (img.displayOrder !== undefined && img.displayOrder >= 0 && img.displayOrder < imageArray.length) {
+          imageArray[img.displayOrder] = img;
+        }
+      });
+
+      setGeneratedImages(imageArray);
+    } else {
+      setGeneratedImages([]);
+    }
 
     // Add to browser history so back button works
     window.history.pushState({ view: 'post' }, '');
