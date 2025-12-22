@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
       const prompt = generateImagePrompt(type, topic, cleanDescription, text);
 
       const response = await openai.images.generate({
-        model: "gpt-image-1",
+        model: "gpt-image-1.5",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
       });
 
-      // gpt-image-1 returns b64_json by default
+      // gpt-image-1.5 returns b64_json by default
       const b64Image = response.data?.[0]?.b64_json;
 
       if (!b64Image) {
@@ -156,13 +156,13 @@ export async function POST(request: NextRequest) {
       const prompt = generateImagePrompt(type, topic, cleanDescription, textContent);
 
       const response = await openai.images.generate({
-        model: "gpt-image-1",
+        model: "gpt-image-1.5",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
       });
 
-      // gpt-image-1 returns b64_json by default
+      // gpt-image-1.5 returns b64_json by default
       const b64Image = response.data?.[0]?.b64_json;
 
       if (!b64Image) {
