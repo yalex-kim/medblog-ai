@@ -1,13 +1,13 @@
-import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImageFromBuffer, saveImageMetadata } from '@/lib/image-storage';
 import { generateImagePrompt, parseImageType, ImageType } from '@/lib/image-prompts';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getImageProvider } from '@/lib/image-providers';
 
 export async function POST(request: NextRequest) {
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
+  // Get the configured image generation provider (OpenAI or Gemini)
+  const imageProvider = getImageProvider();
+
   try {
     const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId } = await request.json();
 
@@ -73,19 +73,14 @@ export async function POST(request: NextRequest) {
       // Generate typed prompt
       const prompt = generateImagePrompt(type, topic, cleanDescription, text);
 
-      const response = await openai.images.generate({
-        model: "gpt-image-1.5",
-        prompt: prompt,
-        n: 1,
+      console.log(`🎨 Using ${imageProvider.providerName} for image generation`);
+
+      const result = await imageProvider.generateImage({
+        prompt,
         size: "1024x1024",
       });
 
-      // gpt-image-1.5 returns b64_json by default
-      const b64Image = response.data?.[0]?.b64_json;
-
-      if (!b64Image) {
-        throw new Error('No image data received from OpenAI');
-      }
+      const b64Image = result.imageData;
 
       // Convert base64 to buffer and upload to Supabase
       let finalImageUrl = '';
@@ -155,19 +150,12 @@ export async function POST(request: NextRequest) {
       // Generate typed prompt
       const prompt = generateImagePrompt(type, topic, cleanDescription, textContent);
 
-      const response = await openai.images.generate({
-        model: "gpt-image-1.5",
-        prompt: prompt,
-        n: 1,
+      const result = await imageProvider.generateImage({
+        prompt,
         size: "1024x1024",
       });
 
-      // gpt-image-1.5 returns b64_json by default
-      const b64Image = response.data?.[0]?.b64_json;
-
-      if (!b64Image) {
-        throw new Error('No image data received from OpenAI');
-      }
+      const b64Image = result.imageData;
 
       // Convert base64 to buffer and upload to Supabase
       let finalImageUrl = '';
