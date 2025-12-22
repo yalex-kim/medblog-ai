@@ -21,11 +21,21 @@ export class GeminiImageProvider implements ImageGenerationProvider {
   async generateImage(
     config: ImageGenerationConfig
   ): Promise<ImageGenerationResult> {
-    const { prompt, model = 'gemini-3-pro-image-preview' } = config;
+    const { prompt, size = '1024x1024', model = 'gemini-3-pro-image-preview' } = config;
+
+    // Convert size to Gemini's imageConfig format
+    // 1024x1024 → 1:1 aspect ratio, 1K resolution
+    const imageConfig = {
+      aspectRatio: '1:1' as const,
+      imageSize: '1K' as const,
+    };
 
     const response = await this.client.models.generateContent({
       model,
       contents: prompt,
+      config: {
+        imageConfig,
+      },
     });
 
     // Extract image data from response
