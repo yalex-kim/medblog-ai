@@ -6,11 +6,11 @@ import {
 } from './types';
 
 /**
- * Google Gemini image generation provider (Gemini 2.5 Flash Image)
+ * Google Gemini image generation provider (Gemini 3 Pro Image - Nano Banana Pro)
  */
 export class GeminiImageProvider implements ImageGenerationProvider {
   private client: GoogleGenAI;
-  public readonly providerName = 'Google Gemini 2.5 Flash Image';
+  public readonly providerName = 'Google Gemini 3 Pro Image (Nano Banana Pro)';
 
   constructor(apiKey?: string) {
     this.client = new GoogleGenAI({
@@ -21,7 +21,7 @@ export class GeminiImageProvider implements ImageGenerationProvider {
   async generateImage(
     config: ImageGenerationConfig
   ): Promise<ImageGenerationResult> {
-    const { prompt, model = 'gemini-2.5-flash-image' } = config;
+    const { prompt, model = 'gemini-3-pro-image-preview' } = config;
 
     const response = await this.client.models.generateContent({
       model,
