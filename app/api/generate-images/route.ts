@@ -5,11 +5,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getImageProvider } from '@/lib/image-providers';
 
 export async function POST(request: NextRequest) {
-  // Get the configured image generation provider (OpenAI or Gemini)
-  const imageProvider = getImageProvider();
-
   try {
-    const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId } = await request.json();
+    const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId, imageProvider: providerOverride } = await request.json();
+
+    const imageProvider = getImageProvider(providerOverride);
 
     console.log('🔍 Request data:', {
       hasBlogPostId: !!blogPostId,

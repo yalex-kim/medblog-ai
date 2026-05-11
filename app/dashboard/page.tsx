@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const [regeneratingIndices, setRegeneratingIndices] = useState<Set<number>>(new Set());
   const [imagePrompts, setImagePrompts] = useState<EditableImagePrompt[]>([]);
   const [editingPrompts, setEditingPrompts] = useState(false);
+  const [imageProvider, setImageProvider] = useState<string>('gpt-image-2');
 
   // New states for saved posts
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
@@ -325,6 +326,7 @@ export default function DashboardPage() {
           keywords: imagePrompts,
           topic: currentTopic,
           blogPostId: currentPostId,
+          imageProvider,
         }),
       });
 
@@ -368,8 +370,9 @@ export default function DashboardPage() {
           topic: currentTopic,
           index,
           blogPostId: currentPostId,
-          replaceExisting: true, // Tell API to delete old image
-          promptId: prompt.id, // Pass prompt ID
+          replaceExisting: true,
+          promptId: prompt.id,
+          imageProvider,
         }),
       });
 
@@ -504,7 +507,7 @@ export default function DashboardPage() {
                   onChange={(e) => setCustomTopic(e.target.value)}
                   placeholder="원하는 주제를 입력하세요"
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  onKeyPress={(e) => e.key === 'Enter' && customTopic && generateBlog(customTopic)}
+                  onKeyDown={(e) => e.key === 'Enter' && customTopic && generateBlog(customTopic)}
                 />
                 <button
                   onClick={() => customTopic && generateBlog(customTopic)}
@@ -626,14 +629,32 @@ export default function DashboardPage() {
             {/* Image Prompts Section */}
             {imagePrompts.length > 0 && (
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
                   <h3 className="font-semibold text-purple-900">이미지 프롬프트 ({imagePrompts.length}/5)</h3>
-                  <button
-                    onClick={() => setEditingPrompts(!editingPrompts)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-                  >
-                    {editingPrompts ? '완료' : '편집'}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {/* Image model selector */}
+                    <select
+                      value={imageProvider}
+                      onChange={(e) => setImageProvider(e.target.value)}
+                      className="px-3 py-2 border border-purple-300 rounded-lg text-sm bg-white text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="openai">GPT-Image-2 (OpenAI)</option>
+                      <option value="gemini">Gemini 3 Pro Image (Google)</option>
+                    </select>
+                    <button
+                      onClick={handleGenerateImages}
+                      disabled={generatingImages}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 text-sm"
+                    >
+                      {generatingImages ? '생성 중...' : '전체 생성'}
+                    </button>
+                    <button
+                      onClick={() => setEditingPrompts(!editingPrompts)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                    >
+                      {editingPrompts ? '완료' : '편집'}
+                    </button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {imagePrompts.map((prompt, index) => {
