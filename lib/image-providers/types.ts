@@ -19,6 +19,8 @@ export interface ImageGenerationConfig {
   size?: string;
   /** Optional model override */
   model?: string;
+  /** Image quality: 'low' | 'medium' | 'high' (OpenAI gpt-image-2 only) */
+  quality?: 'low' | 'medium' | 'high';
 }
 
 /**

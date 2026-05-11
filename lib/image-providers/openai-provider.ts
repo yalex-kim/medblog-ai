@@ -18,14 +18,14 @@ export class OpenAIImageProvider implements ImageGenerationProvider {
   async generateImage(
     config: ImageGenerationConfig
   ): Promise<ImageGenerationResult> {
-    const { prompt, size = '1024x1024' } = config;
+    const { prompt, size = '1024x1024', quality = 'low' } = config;
 
     const response = await this.client.images.generate({
       model: 'gpt-image-2',
       prompt,
       n: 1,
       size: size as '1024x1024' | '1024x1536' | '1536x1024',
-      quality: 'high',
+      quality,
     });
 
     // SDK v6 returns Stream | ImagesResponse union — narrow to the non-streaming case

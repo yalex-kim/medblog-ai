@@ -64,7 +64,8 @@ export default function DashboardPage() {
   const [regeneratingIndices, setRegeneratingIndices] = useState<Set<number>>(new Set());
   const [imagePrompts, setImagePrompts] = useState<EditableImagePrompt[]>([]);
   const [editingPrompts, setEditingPrompts] = useState(false);
-  const [imageProvider, setImageProvider] = useState<string>('gpt-image-2');
+  const [imageProvider, setImageProvider] = useState<string>('openai');
+  const [imageQuality, setImageQuality] = useState<'low' | 'medium' | 'high'>('low');
 
   // New states for saved posts
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
@@ -327,6 +328,7 @@ export default function DashboardPage() {
           topic: currentTopic,
           blogPostId: currentPostId,
           imageProvider,
+          imageQuality,
         }),
       });
 
@@ -373,6 +375,7 @@ export default function DashboardPage() {
           replaceExisting: true,
           promptId: prompt.id,
           imageProvider,
+          imageQuality,
         }),
       });
 
@@ -641,6 +644,18 @@ export default function DashboardPage() {
                       <option value="openai">GPT-Image-2 (OpenAI)</option>
                       <option value="gemini">Gemini 3 Pro Image (Google)</option>
                     </select>
+                    {/* Quality selector — OpenAI only */}
+                    {imageProvider === 'openai' && (
+                      <select
+                        value={imageQuality}
+                        onChange={(e) => setImageQuality(e.target.value as 'low' | 'medium' | 'high')}
+                        className="px-3 py-2 border border-purple-300 rounded-lg text-sm bg-white text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="low">Low (~30초)</option>
+                        <option value="medium">Medium (~80초)</option>
+                        <option value="high">High (~250초)</option>
+                      </select>
+                    )}
                     <button
                       onClick={handleGenerateImages}
                       disabled={generatingImages}

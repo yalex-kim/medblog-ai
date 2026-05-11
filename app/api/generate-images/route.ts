@@ -4,9 +4,11 @@ import { generateImagePrompt, parseImageType, ImageType } from '@/lib/image-prom
 import { supabaseAdmin } from '@/lib/supabase';
 import { getImageProvider } from '@/lib/image-providers';
 
+export const maxDuration = 300; // 5 minutes for High quality generation
+
 export async function POST(request: NextRequest) {
   try {
-    const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId, imageProvider: providerOverride } = await request.json();
+    const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId, imageProvider: providerOverride, imageQuality } = await request.json();
 
     const imageProvider = getImageProvider(providerOverride);
 
@@ -77,6 +79,7 @@ export async function POST(request: NextRequest) {
       const result = await imageProvider.generateImage({
         prompt,
         size: "1024x1024",
+        quality: imageQuality,
       });
 
       const b64Image = result.imageData;
@@ -152,6 +155,7 @@ export async function POST(request: NextRequest) {
       const result = await imageProvider.generateImage({
         prompt,
         size: "1024x1024",
+        quality: imageQuality,
       });
 
       const b64Image = result.imageData;
