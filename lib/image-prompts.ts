@@ -81,9 +81,26 @@ export function generateImagePrompt(
 ): string {
   const template = PROMPT_TEMPLATES[type];
 
-  const textInstruction = textContent
-    ? `Include large, clear Korean text overlay: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background.`
-    : 'Do not include any text overlay in this image.';
+  // Photographic types stay mostly text-free; design-oriented types may carry
+  // supporting Korean labels so the layout can breathe instead of dumping one
+  // verbatim text block.
+  const isPhotoType = type === 'INTRO' || type === 'LIFESTYLE';
+
+  const overlayInstruction = textContent
+    ? `Convey this Korean message in the image: "${textContent}". Weave it naturally into the design as part of the composition — you may split it into a headline plus shorter supporting lines, distribute the pieces across the layout, and adjust spacing, sizing, and emphasis so it reads as intentional graphic design rather than one verbatim line of copied text. Use clean, legible Korean typography that fits the overall style.`
+    : '';
+
+  const supportingTextInstruction = isPhotoType
+    ? 'Keep this scene mostly free of text; only add a short Korean label if it genuinely fits the photo.'
+    : 'You may add brief, natural Korean titles, headings, labels, or captions that complement the content and fit the design (for example section titles, icon captions, or numbered steps). Keep all text accurate, correctly spelled, and meaningful.';
+
+  const textInstruction = [overlayInstruction, supportingTextInstruction]
+    .filter(Boolean)
+    .join(' ');
+
+  // Forbid fabricated hospital branding (real branding is added separately, never
+  // generated) and garbled lettering — without banning legitimate content labels.
+  const noBrandingInstruction = `CRITICAL BRANDING RULE: Do NOT generate any hospital logos, brand logos, emblems, watermarks, or invented hospital/clinic/company names on signboards, building exteriors, nameplates, uniforms, or documents. Do NOT produce garbled, distorted, or meaningless lettering. Any text that appears must be accurate, meaningful Korean relevant to the content above.`;
 
   // Medical/educational context for all types
   const medicalContext = `MEDICAL EDUCATIONAL CONTENT: This is a professional medical illustration for patient education and healthcare information purposes at a women's health clinic.`;
@@ -111,12 +128,15 @@ ${template.camera ? `- Camera & Realism: ${template.camera}` : ''}
 
 ${textInstruction}
 
+${noBrandingInstruction}
+
 Technical Requirements:
 - This image is for medical education and patient information purposes only
 - Content must be clinically accurate, professionally appropriate, and suitable for healthcare settings
 - Maintain a warm, patient-friendly, and professional medical tone
 - If the image includes people, ensure natural skin tones, realistic proportions, and appropriate medical context
 - Use soft, natural lighting and avoid any cartoonish or painterly effects
+- Never render hospital logos, brand marks, or invented hospital/clinic names; any text that appears must be accurate, meaningful Korean relevant to the content
 - Focus on educational value and clinical accuracy
 `;
 }
