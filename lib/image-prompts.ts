@@ -81,21 +81,20 @@ export function generateImagePrompt(
 ): string {
   const template = PROMPT_TEMPLATES[type];
 
-  // Infographics and medical diagrams rely on titles and labels to be useful, so
-  // we allow meaningful Korean labels for them while still blocking fake branding.
-  const allowsLabels = type === 'INFOGRAPHIC' || type === 'MEDICAL';
+  // Photographic types stay mostly text-free; design-oriented types may carry
+  // supporting Korean labels so the layout can breathe instead of dumping one
+  // verbatim text block.
+  const isPhotoType = type === 'INTRO' || type === 'LIFESTYLE';
 
   const overlayInstruction = textContent
-    ? `Include a clear Korean text overlay with this exact wording: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background.`
+    ? `Convey this Korean message in the image: "${textContent}". Weave it naturally into the design as part of the composition — you may split it into a headline plus shorter supporting lines, distribute the pieces across the layout, and adjust spacing, sizing, and emphasis so it reads as intentional graphic design rather than one verbatim line of copied text. Use clean, legible Korean typography that fits the overall style.`
     : '';
 
-  const labelInstruction = allowsLabels
-    ? 'You may include short, accurate Korean titles, headings, and labels that directly describe the content (for example section titles, icon captions, or numbered steps). Every label must be correctly spelled, meaningful, and relevant.'
-    : textContent
-      ? 'Do not add any other text besides the overlay above.'
-      : 'Do not include any text, captions, or labels in this image.';
+  const supportingTextInstruction = isPhotoType
+    ? 'Keep this scene mostly free of text; only add a short Korean label if it genuinely fits the photo.'
+    : 'You may add brief, natural Korean titles, headings, labels, or captions that complement the content and fit the design (for example section titles, icon captions, or numbered steps). Keep all text accurate, correctly spelled, and meaningful.';
 
-  const textInstruction = [overlayInstruction, labelInstruction]
+  const textInstruction = [overlayInstruction, supportingTextInstruction]
     .filter(Boolean)
     .join(' ');
 
