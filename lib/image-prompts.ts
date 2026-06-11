@@ -82,8 +82,12 @@ export function generateImagePrompt(
   const template = PROMPT_TEMPLATES[type];
 
   const textInstruction = textContent
-    ? `Include large, clear Korean text overlay: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background.`
-    : 'Do not include any text overlay in this image.';
+    ? `Include exactly ONE Korean text overlay with this exact wording: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background. Do NOT add any other words, captions, signage, labels, or lettering anywhere else in the image.`
+    : 'Do not include any text, words, captions, labels, signage, or lettering of any kind in this image.';
+
+  // Strictly forbid invented hospital branding so the AI never fabricates a fake
+  // logo or clinic name (real branding is added separately, never generated).
+  const noBrandingInstruction = `CRITICAL BRANDING RULE: Do NOT generate any hospital logos, brand logos, emblems, watermarks, or trademark-like symbols. Do NOT invent or render any hospital, clinic, or company name on signboards, building exteriors, nameplates, uniforms, documents, or anywhere in the scene. Do NOT produce garbled, gibberish, distorted, or meaningless lettering. Leave signage, walls, and surfaces free of any made-up text or branding.`;
 
   // Medical/educational context for all types
   const medicalContext = `MEDICAL EDUCATIONAL CONTENT: This is a professional medical illustration for patient education and healthcare information purposes at a women's health clinic.`;
@@ -111,12 +115,15 @@ ${template.camera ? `- Camera & Realism: ${template.camera}` : ''}
 
 ${textInstruction}
 
+${noBrandingInstruction}
+
 Technical Requirements:
 - This image is for medical education and patient information purposes only
 - Content must be clinically accurate, professionally appropriate, and suitable for healthcare settings
 - Maintain a warm, patient-friendly, and professional medical tone
 - If the image includes people, ensure natural skin tones, realistic proportions, and appropriate medical context
 - Use soft, natural lighting and avoid any cartoonish or painterly effects
+- Never render hospital logos, brand marks, or invented hospital/clinic names; only the explicitly specified text overlay (if any) may appear
 - Focus on educational value and clinical accuracy
 `;
 }
