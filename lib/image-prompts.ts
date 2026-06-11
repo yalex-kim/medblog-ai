@@ -81,13 +81,27 @@ export function generateImagePrompt(
 ): string {
   const template = PROMPT_TEMPLATES[type];
 
-  const textInstruction = textContent
-    ? `Include exactly ONE Korean text overlay with this exact wording: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background. Do NOT add any other words, captions, signage, labels, or lettering anywhere else in the image.`
-    : 'Do not include any text, words, captions, labels, signage, or lettering of any kind in this image.';
+  // Infographics and medical diagrams rely on titles and labels to be useful, so
+  // we allow meaningful Korean labels for them while still blocking fake branding.
+  const allowsLabels = type === 'INFOGRAPHIC' || type === 'MEDICAL';
 
-  // Strictly forbid invented hospital branding so the AI never fabricates a fake
-  // logo or clinic name (real branding is added separately, never generated).
-  const noBrandingInstruction = `CRITICAL BRANDING RULE: Do NOT generate any hospital logos, brand logos, emblems, watermarks, or trademark-like symbols. Do NOT invent or render any hospital, clinic, or company name on signboards, building exteriors, nameplates, uniforms, documents, or anywhere in the scene. Do NOT produce garbled, gibberish, distorted, or meaningless lettering. Leave signage, walls, and surfaces free of any made-up text or branding.`;
+  const overlayInstruction = textContent
+    ? `Include a clear Korean text overlay with this exact wording: "${textContent}". Use a clean sans-serif Korean font with excellent legibility and strong contrast against the background.`
+    : '';
+
+  const labelInstruction = allowsLabels
+    ? 'You may include short, accurate Korean titles, headings, and labels that directly describe the content (for example section titles, icon captions, or numbered steps). Every label must be correctly spelled, meaningful, and relevant.'
+    : textContent
+      ? 'Do not add any other text besides the overlay above.'
+      : 'Do not include any text, captions, or labels in this image.';
+
+  const textInstruction = [overlayInstruction, labelInstruction]
+    .filter(Boolean)
+    .join(' ');
+
+  // Forbid fabricated hospital branding (real branding is added separately, never
+  // generated) and garbled lettering — without banning legitimate content labels.
+  const noBrandingInstruction = `CRITICAL BRANDING RULE: Do NOT generate any hospital logos, brand logos, emblems, watermarks, or invented hospital/clinic/company names on signboards, building exteriors, nameplates, uniforms, or documents. Do NOT produce garbled, distorted, or meaningless lettering. Any text that appears must be accurate, meaningful Korean relevant to the content above.`;
 
   // Medical/educational context for all types
   const medicalContext = `MEDICAL EDUCATIONAL CONTENT: This is a professional medical illustration for patient education and healthcare information purposes at a women's health clinic.`;
@@ -123,7 +137,7 @@ Technical Requirements:
 - Maintain a warm, patient-friendly, and professional medical tone
 - If the image includes people, ensure natural skin tones, realistic proportions, and appropriate medical context
 - Use soft, natural lighting and avoid any cartoonish or painterly effects
-- Never render hospital logos, brand marks, or invented hospital/clinic names; only the explicitly specified text overlay (if any) may appear
+- Never render hospital logos, brand marks, or invented hospital/clinic names; any text that appears must be accurate, meaningful Korean relevant to the content
 - Focus on educational value and clinical accuracy
 `;
 }
