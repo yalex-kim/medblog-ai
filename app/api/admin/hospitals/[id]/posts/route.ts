@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-
-function getAdminSession(request: NextRequest) {
-  const session = request.cookies.get('admin_session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    if (sessionData.type !== 'admin') return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getAdminSession } from '@/lib/session';
 
 // Get all blog posts for a hospital
 export async function GET(

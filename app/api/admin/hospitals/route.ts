@@ -1,23 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
-
-function getAdminSession(request: NextRequest) {
-  const session = request.cookies.get('admin_session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    if (sessionData.type !== 'admin') return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getAdminSession } from '@/lib/session';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 // Admin creates a new hospital account
 export async function POST(request: NextRequest) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
     // Check admin authentication
     const adminSession = getAdminSession(request);
     if (!adminSession) {
@@ -29,9 +22,12 @@ export async function POST(request: NextRequest) {
 
     const { hospital_id, initial_password, department = '산부인과' } = await request.json();
 
-    if (!hospital_id || !initial_password) {
+    if (
+      !hospital_id || typeof hospital_id !== 'string' || hospital_id.length > 100 ||
+      !initial_password || typeof initial_password !== 'string' || initial_password.length < 8
+    ) {
       return NextResponse.json(
-        { error: '병원 ID와 초기 비밀번호를 입력해주세요.' },
+        { error: '병원 ID와 8자 이상의 초기 비밀번호를 입력해주세요.' },
         { status: 400 }
       );
     }
@@ -93,7 +89,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Admin gets list of all hospitals
 export async function GET(request: NextRequest) {
   try {
     // Check admin authentication

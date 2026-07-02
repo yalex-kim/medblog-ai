@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getImagesForPost } from '@/lib/image-storage';
-
-function getSession(request: NextRequest) {
-  const session = request.cookies.get('session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getSession } from '@/lib/session';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 // GET: Fetch recent blog posts (최근 10개)
 export async function GET(request: NextRequest) {
@@ -63,6 +53,10 @@ export async function GET(request: NextRequest) {
 // PUT: Update blog post content
 export async function PUT(request: NextRequest) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
     const sessionData = getSession(request);
     if (!sessionData) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
@@ -70,7 +64,7 @@ export async function PUT(request: NextRequest) {
 
     const { id, content } = await request.json();
 
-    if (!id || !content) {
+    if (!id || typeof id !== 'string' || !content || typeof content !== 'string') {
       return NextResponse.json({ error: '글 ID와 내용을 입력해주세요.' }, { status: 400 });
     }
 

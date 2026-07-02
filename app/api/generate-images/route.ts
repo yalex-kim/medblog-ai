@@ -3,32 +3,83 @@ import { uploadImageFromBuffer, saveImageMetadata } from '@/lib/image-storage';
 import { generateImagePrompt, parseImageType, ImageType } from '@/lib/image-prompts';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getImageProvider } from '@/lib/image-providers';
+import { getSession } from '@/lib/session';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 export const maxDuration = 300; // 5 minutes for High quality generation
 
+const VALID_IMAGE_TYPES: ImageType[] = ['INTRO', 'MEDICAL', 'LIFESTYLE', 'WARNING', 'CTA', 'INFOGRAPHIC'];
+const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_TEXT_LENGTH = 200;
+const MAX_KEYWORDS = 5;
+
+function isValidKeywordItem(keyword: unknown): boolean {
+  if (typeof keyword === 'string') return keyword.length <= MAX_DESCRIPTION_LENGTH;
+  if (typeof keyword !== 'object' || keyword === null) return false;
+  const k = keyword as Record<string, unknown>;
+  if (typeof k.description !== 'string' || k.description.length > MAX_DESCRIPTION_LENGTH) return false;
+  if (k.text !== undefined && (typeof k.text !== 'string' || k.text.length > MAX_TEXT_LENGTH)) return false;
+  if (k.type !== undefined && !VALID_IMAGE_TYPES.includes(k.type as ImageType)) return false;
+  return true;
+}
+
+// Confirms the caller's session actually owns the blog post before allowing
+// writes/deletes against its images (prevents cross-tenant tampering).
+async function verifyBlogPostOwnership(blogPostId: string, hospitalId: string): Promise<boolean> {
+  const { data: post } = await supabaseAdmin
+    .from('blog_posts')
+    .select('hospital_id')
+    .eq('id', blogPostId)
+    .single();
+  return !!post && post.hospital_id === hospitalId;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
+    const sessionData = getSession(request);
+    if (!sessionData) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    }
+
+    const { allowed, retryAfterSeconds } = checkRateLimit(
+      `generate-images:${sessionData.id}`,
+      30,
+      60 * 60 * 1000
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+      );
+    }
+
     const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId, imageProvider: providerOverride, imageQuality } = await request.json();
+
+    if (blogPostId !== undefined && blogPostId !== null) {
+      if (typeof blogPostId !== 'string' || !(await verifyBlogPostOwnership(blogPostId, sessionData.id))) {
+        return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 });
+      }
+    }
 
     const imageProvider = getImageProvider(providerOverride);
 
-    console.log('🔍 Request data:', {
-      hasBlogPostId: !!blogPostId,
-      blogPostId,
-      hasKeywords: !!keywords,
-      keywordCount: keywords?.length || 0,
-      hasDescription: !!description,
-    });
-
     // Single image generation (for regeneration)
     if (description !== undefined && index !== undefined) {
-      console.log('🎨 Regenerating image for:', description);
+      if (typeof description !== 'string' || description.length > MAX_DESCRIPTION_LENGTH) {
+        return NextResponse.json({ error: '이미지 설명이 올바르지 않습니다.' }, { status: 400 });
+      }
+      if (text !== undefined && (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH)) {
+        return NextResponse.json({ error: '이미지 텍스트가 올바르지 않습니다.' }, { status: 400 });
+      }
 
       // If replaceExisting is true, delete old image first
       if (replaceExisting && blogPostId && index !== undefined) {
         try {
-          console.log('🗑️ Deleting old image at index:', index);
-
           // Find and delete existing image with same blog_post_id and display_order
           const { data: existingImages, error: fetchError } = await supabaseAdmin
             .from('blog_images')
@@ -57,8 +108,6 @@ export async function POST(request: NextRequest) {
 
               if (dbError) {
                 console.error('Error deleting from database:', dbError);
-              } else {
-                console.log('✅ Deleted old image:', img.id);
               }
             }
           }
@@ -74,8 +123,6 @@ export async function POST(request: NextRequest) {
       // Generate typed prompt
       const prompt = generateImagePrompt(type, topic, cleanDescription, text);
 
-      console.log(`🎨 Using ${imageProvider.providerName} for image generation`);
-
       const result = await imageProvider.generateImage({
         prompt,
         size: "1024x1024",
@@ -84,12 +131,10 @@ export async function POST(request: NextRequest) {
 
       const b64Image = result.imageData;
 
-      // Convert base64 to buffer and upload to Supabase
-      let finalImageUrl = '';
       if (blogPostId && b64Image) {
         try {
           const imageBuffer = Buffer.from(b64Image, 'base64');
-          finalImageUrl = await uploadImageFromBuffer(imageBuffer);
+          const finalImageUrl = await uploadImageFromBuffer(imageBuffer);
 
           // Extract storage path from URL for metadata
           const urlParts = finalImageUrl.split('/');
@@ -108,17 +153,28 @@ export async function POST(request: NextRequest) {
             promptId // Pass prompt ID
           );
 
-          console.log('✅ Image uploaded to storage:', finalImageUrl);
+          return NextResponse.json({
+            image: {
+              keyword: cleanDescription,
+              url: finalImageUrl,
+              prompt: prompt,
+              type: type,
+            },
+            index,
+          });
         } catch (uploadError) {
-          console.error('Failed to upload image, using temporary URL:', uploadError);
-          // Fall back to temporary URL if upload fails
+          console.error('Failed to upload image:', uploadError);
+          return NextResponse.json(
+            { error: '이미지 저장 중 오류가 발생했습니다. 다시 시도해주세요.' },
+            { status: 502 }
+          );
         }
       }
 
       return NextResponse.json({
         image: {
           keyword: cleanDescription,
-          url: finalImageUrl,
+          url: '',
           prompt: prompt,
           type: type,
         },
@@ -134,7 +190,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🎨 Generating images for keywords:', keywords);
+    if (!Array.isArray(keywords) || keywords.length > MAX_KEYWORDS || !keywords.every(isValidKeywordItem)) {
+      return NextResponse.json(
+        { error: '이미지 키워드 입력값이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
 
     // Generate images for each keyword
     const imagePromises = keywords.map(async (keyword: string | {type?: string, description: string, text: string, id?: string}, idx: number) => {
@@ -162,6 +223,7 @@ export async function POST(request: NextRequest) {
 
       // Convert base64 to buffer and upload to Supabase
       let finalImageUrl = '';
+      let uploadFailed = false;
       if (blogPostId && b64Image) {
         try {
           const imageBuffer = Buffer.from(b64Image, 'base64');
@@ -183,11 +245,10 @@ export async function POST(request: NextRequest) {
             type, // Pass image type
             promptId // Pass prompt ID
           );
-
-          console.log('✅ Image uploaded to storage:', finalImageUrl);
         } catch (uploadError) {
-          console.error('Failed to upload image, using temporary URL:', uploadError);
-          // Fall back to temporary URL if upload fails
+          console.error('Failed to upload image:', uploadError);
+          finalImageUrl = '';
+          uploadFailed = true;
         }
       }
 
@@ -197,12 +258,11 @@ export async function POST(request: NextRequest) {
         url: finalImageUrl,
         prompt: prompt,
         type: type,
+        ...(uploadFailed ? { error: '이미지 저장에 실패했습니다.' } : {}),
       };
     });
 
     const images = await Promise.all(imagePromises);
-
-    console.log('✅ Generated', images.length, 'images');
 
     return NextResponse.json({ images });
   } catch (error: unknown) {

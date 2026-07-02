@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
-
-function getAdminSession(request: NextRequest) {
-  const session = request.cookies.get('admin_session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    if (sessionData.type !== 'admin') return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getAdminSession } from '@/lib/session';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 // Reset hospital password
 export async function POST(
@@ -21,6 +10,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
     const adminSession = getAdminSession(request);
     if (!adminSession) {
       return NextResponse.json(
@@ -32,9 +25,9 @@ export async function POST(
     const { id } = await params;
     const { new_password } = await request.json();
 
-    if (!new_password) {
+    if (!new_password || typeof new_password !== 'string' || new_password.length < 8) {
       return NextResponse.json(
-        { error: '새 비밀번호를 입력해주세요.' },
+        { error: '8자 이상의 새 비밀번호를 입력해주세요.' },
         { status: 400 }
       );
     }

@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { getSession } from '@/lib/session';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get session from cookie
-    const session = request.cookies.get('session')?.value;
-    if (!session) {
-      return NextResponse.json(
-        { error: '로그인이 필요합니다.' },
-        { status: 401 }
-      );
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
     }
 
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) {
+    const sessionData = getSession(request);
+    if (!sessionData) {
       return NextResponse.json(
-        { error: '세션이 만료되었습니다.' },
+        { error: '로그인이 필요합니다.' },
         { status: 401 }
       );
     }

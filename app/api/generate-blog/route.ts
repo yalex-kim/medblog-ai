@@ -1,51 +1,73 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getSession } from '@/lib/session';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-function getSession(request: NextRequest) {
-  const session = request.cookies.get('session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+const MAX_TOPIC_LENGTH = 200;
+const MAX_KEYWORDS_LENGTH = 500;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
     const sessionData = getSession(request);
+    if (!sessionData) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    }
+
+    const { allowed, retryAfterSeconds } = checkRateLimit(
+      `generate-blog:${sessionData.id}`,
+      20,
+      60 * 60 * 1000
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+      );
+    }
+
     const { topic, keywords } = await request.json();
 
-    if (!topic) {
+    if (!topic || typeof topic !== 'string' || !topic.trim()) {
       return NextResponse.json(
         { error: '주제를 입력해주세요.' },
         { status: 400 }
       );
     }
 
-    // Fetch hospital information
-    let hospitalName = '병원';
-    let hospitalAddress = '';
-
-    if (sessionData) {
-      const { data: hospital } = await supabaseAdmin
-        .from('hospitals')
-        .select('hospital_name, address')
-        .eq('id', sessionData.id)
-        .single();
-
-      if (hospital) {
-        hospitalName = hospital.hospital_name || '병원';
-        hospitalAddress = hospital.address || '';
-      }
+    if (topic.length > MAX_TOPIC_LENGTH) {
+      return NextResponse.json(
+        { error: `주제는 ${MAX_TOPIC_LENGTH}자 이내로 입력해주세요.` },
+        { status: 400 }
+      );
     }
+
+    if (keywords !== undefined && (typeof keywords !== 'string' || keywords.length > MAX_KEYWORDS_LENGTH)) {
+      return NextResponse.json(
+        { error: '키워드 입력값이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    // Fetch hospital information
+    const { data: hospital } = await supabaseAdmin
+      .from('hospitals')
+      .select('hospital_name, address')
+      .eq('id', sessionData.id)
+      .single();
+
+    const hospitalName = hospital?.hospital_name || '병원';
+    const hospitalAddress = hospital?.address || '';
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
@@ -70,29 +92,7 @@ export async function POST(request: NextRequest) {
       : '';
 
     // Extract image suggestions from content [#번호 | Type | 이미지 묘사 설명 | text : 텍스트내용]
-    const imageSuggestions: Array<{id: string, type: string, description: string, text: string, position: number}> = [];
-    // Updated regex to match new format with ID (#1-#5), type, and optional "text :" prefix
-    const imageRegex = /\[#(\d+)\s*\|\s*([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
-    let match;
-
-    while ((match = imageRegex.exec(fullContent)) !== null) {
-      const promptId = match[1].trim();
-      const imageType = match[2].trim();
-      const visualDescription = match[3].trim();
-      const textContent = match[4] ? match[4].trim() : '';
-      imageSuggestions.push({
-        id: promptId,
-        type: imageType,
-        description: visualDescription,
-        text: textContent,
-        position: match.index,
-      });
-    }
-
-    // Limit to exactly 5 images
-    if (imageSuggestions.length > 5) {
-      imageSuggestions.splice(5);
-    }
+    const imageSuggestions = parseImageSuggestions(fullContent);
 
     // 이미지 키워드 추출 (기존 방식 유지)
     const keywordMatch = fullContent.match(/\[이미지 키워드\]([\s\S]*?)(?:\n\n|$)/);
@@ -116,24 +116,22 @@ export async function POST(request: NextRequest) {
     const titleMatch = content.match(/^#\s+(.+)$/m);
     const title = titleMatch ? titleMatch[1] : topic;
 
-    // Save to database if user is logged in
+    // Save to database
     let blogPostId = null;
-    if (sessionData) {
-      const { data, error } = await supabaseAdmin.from('blog_posts').insert([
-        {
-          hospital_id: sessionData.id,
-          title,
-          content,
-          topic,
-          keywords: keywords?.split(',').map((k: string) => k.trim()) || [],
-          image_keywords: imageKeywords,
-          posted_to_blog: false,
-        },
-      ]).select().single();
+    const { data, error } = await supabaseAdmin.from('blog_posts').insert([
+      {
+        hospital_id: sessionData.id,
+        title,
+        content,
+        topic,
+        keywords: keywords?.split(',').map((k: string) => k.trim()) || [],
+        image_keywords: imageKeywords,
+        posted_to_blog: false,
+      },
+    ]).select().single();
 
-      if (data && !error) {
-        blogPostId = data.id;
-      }
+    if (data && !error) {
+      blogPostId = data.id;
     }
 
     return NextResponse.json({

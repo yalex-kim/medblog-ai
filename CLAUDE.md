@@ -8,9 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Start development server (Turbopack)
 npm run build    # Production build (Turbopack)
 npm run lint     # Run ESLint
+npm test         # Run vitest unit tests
 ```
 
-No test suite is configured.
+Vitest covers `lib/session.ts`, `lib/parse-image-suggestions.ts`, `lib/rate-limit.ts`, and `lib/blog-credential-crypto.ts`. There is no end-to-end/integration test coverage for API routes or UI flows.
 
 ## Architecture
 
@@ -23,9 +24,11 @@ No test suite is configured.
 - Supabase for database (`hospitals`, `blog_posts`, `blog_images` tables) and Storage (`blog-images` bucket)
 
 ### Two-tier auth system
-Sessions are plain base64-encoded JSON stored in HttpOnly cookies (not JWTs). Two separate cookie names with different `type` fields:
-- `session` cookie → hospital users (`/api/auth/*`, `/dashboard`, `/settings`)
-- `admin_session` cookie → admin users (`/api/admin/*`, `/admin`)
+Sessions are HMAC-SHA256-signed JSON tokens (`base64url(payload).base64url(signature)`, signed with `SESSION_SECRET`) stored in HttpOnly cookies — see `lib/session.ts`. Two separate cookie names with different `type` fields:
+- `session` cookie → hospital users (`/api/auth/*`, `/dashboard`, `/settings`), created/read via `createHospitalSessionToken`/`getSession`
+- `admin_session` cookie → admin users (`/api/admin/*`, `/admin`), created/read via `createAdminSessionToken`/`getAdminSession`
+
+All routes that require auth must use `getSession`/`getAdminSession` from `lib/session.ts` — do not re-implement cookie parsing locally. State-changing routes (`POST`/`PUT`) should also call `isTrustedOrigin` from `lib/request-security.ts` as defense-in-depth against CSRF, and login/generation endpoints should call `checkRateLimit` from `lib/rate-limit.ts` (in-memory, per-instance).
 
 ### Key data flows
 
@@ -53,7 +56,7 @@ Sessions are plain base64-encoded JSON stored in HttpOnly cookies (not JWTs). Tw
 [#2 | INFOGRAPHIC | 묘사 | text : 오버레이 텍스트]
 ```
 
-INTRO and LIFESTYLE types have no `text` field. The regex in both `generate-blog/route.ts` and `dashboard/page.tsx` must stay in sync when this format changes.
+INTRO and LIFESTYLE types have no `text` field. Parsing lives in `lib/parse-image-suggestions.ts` (shared by `generate-blog/route.ts` and `dashboard/page.tsx`) — change the format there, not inline.
 
 ### Environment variables (`.env.local`)
 
@@ -61,23 +64,29 @@ INTRO and LIFESTYLE types have no `text` field. The regex in both `generate-blog
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+SESSION_SECRET=          # signs session cookies (openssl rand -base64 48)
+BLOG_CREDENTIAL_ENCRYPTION_KEY=  # encrypts hospitals' blog platform passwords at rest
 ANTHROPIC_API_KEY=
 IMAGE_PROVIDER=openai   # or 'gemini'
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 ```
 
+`SESSION_SECRET` and `BLOG_CREDENTIAL_ENCRYPTION_KEY` are required — routes that need them throw at request time if unset.
+
 ### Database setup
 
 Run SQL files in Supabase SQL Editor in order:
 1. `supabase-setup.sql` — `blog_images` table + Storage bucket setup
-2. `supabase-migrations/create-admins-table.sql` — `admins` table
+2. `supabase-migrations/create-admins-table.sql` — `admins` table (no default account is seeded; see `ADMIN_SETUP.md`)
 3. `supabase-migrations/add-display-order.sql` — adds `display_order`, `image_type`, `prompt_id` to `blog_images`
+4. `supabase-migrations/enable-rls.sql` — enables RLS (no permissive policies) on `hospitals`, `admins`, `blog_posts` as defense-in-depth
+5. `supabase-migrations/rotate-default-admin.sql` — only needed if you deployed this app before the hardcoded default admin was removed
 
-The app uses `supabaseAdmin` (service role key) for all server-side DB operations, bypassing RLS. `supabase` (anon key) is available but currently unused server-side.
+The app uses `supabaseAdmin` (service role key) for all server-side DB operations, bypassing RLS — RLS above is a safety net in case the anon key is ever used against these tables, not the primary access control. `supabase` (anon key) is available but currently unused server-side.
 
 ### Admin system
 
-Hospitals are created by admins at `/admin`. Admin credentials use bcrypt hashing; add new admins via `scripts/generate-admin-hash.js`. See `ADMIN_SETUP.md` for full setup.
+Hospitals are created by admins at `/admin`. Admin credentials use bcrypt hashing; there is no default/seeded admin account — create the first one with `node scripts/generate-admin-hash.js <username> <password>` and run the printed `INSERT`. See `ADMIN_SETUP.md` for full setup.
 
 Hospital accounts have a `must_change_password` flag — if set, users are redirected to `/change-password` after login.

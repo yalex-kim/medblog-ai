@@ -14,31 +14,25 @@ Supabase Dashboard → SQL Editor에서 다음 파일을 실행:
 supabase-migrations/create-admins-table.sql
 ```
 
-이 마이그레이션은:
-- `admins` 테이블 생성
-- 기본 관리자 계정 생성 (username: `admin`, password: `admin123!`)
+이 마이그레이션은 `admins` 테이블만 생성합니다. **기본 관리자 계정은 더 이상 자동으로 생성되지 않습니다** — 하드코딩된 비밀번호를 소스코드에 커밋하는 것 자체가 보안 위험이기 때문입니다.
 
-### 2. 첫 로그인 및 비밀번호 변경
+### 2. 첫 관리자 계정 생성
 
-1. `/admin/login` 페이지 접속
-2. 기본 계정으로 로그인:
-   - ID: `admin`
-   - 비밀번호: `admin123!`
-3. **즉시 비밀번호를 변경하세요!** (보안상 매우 중요)
+```bash
+node scripts/generate-admin-hash.js <username> '<your-own-strong-password>'
+```
+
+이 스크립트가 출력하는 `INSERT INTO admins (...)` 문을 Supabase SQL Editor에서 그대로 실행하세요.
+
+이전에 이 프로젝트를 이미 배포해서 기본 계정(`admin` / `admin123!`)이 만들어져 있다면, 위 방법으로 새 관리자를 먼저 만든 뒤 `supabase-migrations/rotate-default-admin.sql`을 실행해 기존 기본 계정을 비활성화하세요.
 
 ### 3. 비밀번호 변경 방법
 
-현재는 Supabase Dashboard를 통해 변경:
-
-```sql
--- bcrypt로 새 비밀번호 해시 생성 (bcrypt 라운드 10)
--- https://bcrypt-generator.com/ 에서 생성 가능
-
-UPDATE admins
-SET password_hash = 'your_new_bcrypt_hash_here',
-    updated_at = now()
-WHERE username = 'admin';
+```bash
+node scripts/generate-admin-hash.js <username> '<new-password>'
 ```
+
+출력되는 `UPDATE admins SET password_hash = ...` 문을 Supabase SQL Editor에서 실행하세요.
 
 ## 🔒 보안 기능
 
@@ -117,26 +111,18 @@ fetch('/api/admin/hospitals')
 
 ## ⚠️ 중요 보안 노트
 
-1. **기본 비밀번호 즉시 변경**: `admin123!`은 테스트용입니다
+1. **기존 배포 확인**: 예전 버전을 배포한 적이 있다면 기본 계정(`admin` / `admin123!`)이 아직 활성 상태인지 확인하고 `rotate-default-admin.sql`로 비활성화하세요
 2. **프로덕션 환경**: 강력한 비밀번호 정책 적용
 3. **HTTPS 필수**: 프로덕션에서는 반드시 HTTPS 사용
 4. **세션 쿠키 보안**: `secure` 플래그는 프로덕션에서 자동 활성화됨
 
 ## 📝 추가 관리자 계정 생성
 
-Supabase SQL Editor에서:
-
-```sql
--- bcrypt 해시를 먼저 생성 (https://bcrypt-generator.com/)
-INSERT INTO admins (username, password_hash, role, full_name, email)
-VALUES (
-  'new_admin',
-  '$2a$10$your_bcrypt_hash_here',
-  'admin',
-  'New Admin Name',
-  'newadmin@example.com'
-);
+```bash
+node scripts/generate-admin-hash.js new_admin '<strong-password>'
 ```
+
+출력되는 `INSERT INTO admins (...)` 문을 Supabase SQL Editor에서 실행하세요.
 
 ## 🔍 문제 해결
 

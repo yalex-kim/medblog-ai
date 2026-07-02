@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getSession } from '@/lib/session';
+import { encryptBlogPassword } from '@/lib/blog-credential-crypto';
+import { isTrustedOrigin } from '@/lib/request-security';
 
-// Helper to get session
-function getSession(request: NextRequest) {
-  const session = request.cookies.get('session')?.value;
-  if (!session) return null;
-
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+const MAX_TEXT_FIELD_LENGTH = 200;
+const MAX_SERVICES = 20;
 
 // Get hospital settings
 export async function GET(request: NextRequest) {
@@ -39,9 +31,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Don't send password hash to client
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash, ...hospitalData } = hospital;
+    // Don't send credential material to the client
+    const { password_hash, blog_password_encrypted, ...hospitalData } = hospital;
+    void password_hash;
+    void blog_password_encrypted;
 
     return NextResponse.json({ hospital: hospitalData });
   } catch (error) {
@@ -53,9 +46,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function isValidUpdatePayload(updates: Record<string, unknown>): boolean {
+  const textFields = ['hospital_name', 'department', 'address', 'blog_platform', 'blog_id', 'blog_password_encrypted', 'blog_board_name'];
+  for (const field of textFields) {
+    const value = updates[field];
+    if (value !== undefined && (typeof value !== 'string' || value.length > MAX_TEXT_FIELD_LENGTH)) {
+      return false;
+    }
+  }
+
+  if (updates.main_services !== undefined) {
+    const services = updates.main_services;
+    if (
+      !Array.isArray(services) ||
+      services.length > MAX_SERVICES ||
+      !services.every((s) => typeof s === 'string' && s.length <= MAX_TEXT_FIELD_LENGTH)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // Update hospital settings
 export async function PUT(request: NextRequest) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
     const sessionData = getSession(request);
     if (!sessionData) {
       return NextResponse.json(
@@ -65,6 +85,13 @@ export async function PUT(request: NextRequest) {
     }
 
     const updates = await request.json();
+
+    if (!isValidUpdatePayload(updates)) {
+      return NextResponse.json(
+        { error: '입력값이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
 
     // Fields that can be updated
     const allowedFields = [
@@ -83,6 +110,12 @@ export async function PUT(request: NextRequest) {
       if (updates[field] !== undefined) {
         updateData[field] = updates[field];
       }
+    }
+
+    // The blog platform password is the hospital's external credential —
+    // never store it in plaintext.
+    if (typeof updateData.blog_password_encrypted === 'string' && updateData.blog_password_encrypted) {
+      updateData.blog_password_encrypted = encryptBlogPassword(updateData.blog_password_encrypted);
     }
 
     // Check if all required fields are filled
@@ -119,8 +152,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash, ...hospitalData } = data;
+    const { password_hash, blog_password_encrypted, ...hospitalData } = data;
+    void password_hash;
+    void blog_password_encrypted;
 
     return NextResponse.json({
       message: '설정이 저장되었습니다.',

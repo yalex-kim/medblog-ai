@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
+import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
 
 interface Topics {
   정보성: string[];
@@ -144,27 +145,7 @@ export default function DashboardPage() {
     console.log('Saved images:', post.images);
 
     // Extract image suggestions from content if they exist (new format with IDs)
-    const imageSuggestions: ImageSuggestion[] = [];
-    const imageRegex = /\[#(\d+)\s*\|\s*([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
-    let match;
-
-    while ((match = imageRegex.exec(post.content)) !== null) {
-      const promptId = match[1].trim();
-      const imageType = match[2].trim();
-      const visualDescription = match[3].trim();
-      const textContent = match[4] ? match[4].trim() : '';
-      imageSuggestions.push({
-        id: promptId,
-        type: imageType,
-        description: visualDescription,
-        text: textContent,
-      });
-    }
-
-    // Limit to 5 images
-    if (imageSuggestions.length > 5) {
-      imageSuggestions.splice(5);
-    }
+    const imageSuggestions: ImageSuggestion[] = parseImageSuggestions(post.content);
 
     console.log('Extracted image suggestions from content:', imageSuggestions);
 
@@ -265,27 +246,7 @@ export default function DashboardPage() {
 
       if (response.ok) {
         // Re-parse image prompts from edited content
-        const imageSuggestions: ImageSuggestion[] = [];
-        const imageRegex = /\[#(\d+)\s*\|\s*([A-Z]+)\s*\|\s*([^\|\]]+?)(?:\s*\|\s*(?:text\s*:\s*)?([^\]]+))?\]/g;
-        let match;
-
-        while ((match = imageRegex.exec(editedContent)) !== null) {
-          const promptId = match[1].trim();
-          const imageType = match[2].trim();
-          const visualDescription = match[3].trim();
-          const textContent = match[4] ? match[4].trim() : '';
-          imageSuggestions.push({
-            id: promptId,
-            type: imageType,
-            description: visualDescription,
-            text: textContent,
-          });
-        }
-
-        // Limit to 5 images
-        if (imageSuggestions.length > 5) {
-          imageSuggestions.splice(5);
-        }
+        const imageSuggestions: ImageSuggestion[] = parseImageSuggestions(editedContent);
 
         // Update blog result and image prompts
         setBlogResult({ ...blogResult!, content: editedContent, imageSuggestions });
