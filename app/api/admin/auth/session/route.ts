@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-function getAdminSession(request: NextRequest) {
-  const session = request.cookies.get('admin_session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    if (sessionData.type !== 'admin') return null; // Must be admin session
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getAdminSession } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {

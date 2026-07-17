@@ -1,16 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-function getSession(request: NextRequest) {
-  const session = request.cookies.get('session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getSession } from '@/lib/session';
 
 export async function GET(request: NextRequest) {
   try {

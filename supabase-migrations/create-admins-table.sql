@@ -24,19 +24,8 @@ COMMENT ON COLUMN admins.is_active IS 'Whether this admin account is active';
 CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username);
 CREATE INDEX IF NOT EXISTS idx_admins_is_active ON admins(is_active);
 
--- Insert default admin account (password: admin123! - MUST CHANGE AFTER FIRST LOGIN)
--- Password hash for 'admin123!' generated with bcryptjs rounds=10
--- To generate new hash: node scripts/generate-admin-hash.js [your-password]
-INSERT INTO admins (username, password_hash, role, full_name, email)
-VALUES (
-  'admin',
-  '$2b$10$snFot1SwrY/mmNHpJMMdeuqOjLIdj2i5YsJcE.jBjS1gdLrq6/cBq',
-  'super_admin',
-  'System Administrator',
-  'admin@medblogai.com'
-)
-ON CONFLICT (username) DO NOTHING;
-
--- Note: Default password is 'admin123!'
--- IMPORTANT: Change this password immediately after first login!
--- To generate new password hash: node scripts/generate-admin-hash.js your-new-password
+-- No default admin account is seeded here on purpose: a hardcoded
+-- username/password committed to source control is a public credential.
+-- Create your first admin with a hash you generate yourself:
+--   node scripts/generate-admin-hash.js 'your-own-strong-password'
+-- then run the resulting INSERT statement it prints.

@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { createAdminSessionToken, SESSION_COOKIE_MAX_AGE_SECONDS } from '@/lib/session';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
+    const { allowed, retryAfterSeconds } = checkRateLimit(
+      `admin-login:${getClientIp(request)}`,
+      10,
+      15 * 60 * 1000
+    );
+    if (!allowed) {
+      return NextResponse.json(
+        { error: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+        { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+      );
+    }
+
     const body = await request.json();
     const username = body.username?.trim();
     const password = body.password?.trim();
@@ -46,16 +65,11 @@ export async function POST(request: NextRequest) {
       .update({ last_login_at: new Date().toISOString() })
       .eq('id', admin.id);
 
-    // Create session
-    const sessionData = {
+    const sessionToken = createAdminSessionToken({
       id: admin.id,
       username: admin.username,
       role: admin.role,
-      type: 'admin', // Important: distinguish from hospital sessions
-      exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-    };
-
-    const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+    });
 
     const response = NextResponse.json({
       message: '로그인 성공',
@@ -71,7 +85,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60, // 24 hours
+      maxAge: SESSION_COOKIE_MAX_AGE_SECONDS,
       path: '/',
     });
 

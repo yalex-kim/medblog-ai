@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-
-function getAdminSession(request: NextRequest) {
-  const session = request.cookies.get('admin_session')?.value;
-  if (!session) return null;
-  try {
-    const sessionData = JSON.parse(Buffer.from(session, 'base64').toString());
-    if (sessionData.exp < Date.now()) return null;
-    if (sessionData.type !== 'admin') return null;
-    return sessionData;
-  } catch {
-    return null;
-  }
-}
+import { getAdminSession } from '@/lib/session';
+import { isTrustedOrigin } from '@/lib/request-security';
 
 // Get hospital details
 export async function GET(
@@ -30,9 +19,10 @@ export async function GET(
 
     const { id } = await params;
 
+    // Never return credential material (password hash, blog platform password) to the admin client
     const { data: hospital, error } = await supabaseAdmin
       .from('hospitals')
-      .select('*')
+      .select('id, hospital_id, hospital_name, department, main_services, address, blog_platform, blog_id, blog_board_name, is_initial_setup_complete, must_change_password, created_at, updated_at')
       .eq('id', id)
       .single();
 
@@ -54,11 +44,38 @@ export async function GET(
 }
 
 // Update hospital details
+const MAX_TEXT_FIELD_LENGTH = 200;
+const MAX_SERVICES = 20;
+
+function isValidHospitalUpdate(body: Record<string, unknown>): boolean {
+  for (const field of ['hospital_name', 'department', 'address']) {
+    const value = body[field];
+    if (value !== undefined && value !== null && (typeof value !== 'string' || value.length > MAX_TEXT_FIELD_LENGTH)) {
+      return false;
+    }
+  }
+  if (body.main_services !== undefined && body.main_services !== null) {
+    const services = body.main_services;
+    if (
+      !Array.isArray(services) ||
+      services.length > MAX_SERVICES ||
+      !services.every((s) => typeof s === 'string' && s.length <= MAX_TEXT_FIELD_LENGTH)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!isTrustedOrigin(request)) {
+      return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 403 });
+    }
+
     const adminSession = getAdminSession(request);
     if (!adminSession) {
       return NextResponse.json(
@@ -69,6 +86,14 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
+
+    if (!isValidHospitalUpdate(body)) {
+      return NextResponse.json(
+        { error: '입력값이 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
     const {
       hospital_name,
       department,
@@ -97,7 +122,11 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({ hospital: data });
+    const { password_hash, blog_password_encrypted, ...hospitalData } = data;
+    void password_hash;
+    void blog_password_encrypted;
+
+    return NextResponse.json({ hospital: hospitalData });
   } catch (error) {
     console.error('Error in PUT /api/admin/hospitals/[id]:', error);
     return NextResponse.json(
