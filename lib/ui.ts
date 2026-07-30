@@ -1,19 +1,17 @@
-// Shared button styling.
+// Shared button styling — 돌봄 direction.
 //
-// The app previously used six unrelated button colors (blue, green, purple,
-// indigo, orange, gray) at identical weight, so nothing signalled which
-// action was the primary one on a screen. These three roles replace that:
-// exactly one primary per view, everything else secondary, and danger only
-// for consequential actions.
-//
-// Size/width classes (px-*, py-*, w-full, flex-1) stay at the call site.
-const base = 'rounded-lg font-medium transition-colors disabled:cursor-not-allowed';
+// Roles, not colors: exactly one primary per view, everything else
+// secondary, danger only for consequential actions. Pill shape and the
+// generous padding are what make the surface read as soft rather than
+// clinical; the palette lives in app/globals.css.
+const base =
+  'rounded-full font-medium transition-colors disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent';
 
-export const btnPrimary = `${base} bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500`;
+export const btnPrimary = `${base} bg-accent text-white hover:bg-accent-strong disabled:bg-line-strong disabled:text-ink-faint`;
 
-export const btnSecondary = `${base} bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400`;
+export const btnSecondary = `${base} bg-surface text-ink-soft border border-line-strong hover:bg-accent-tint hover:text-accent-strong disabled:bg-line disabled:text-ink-faint`;
 
-export const btnDanger = `${base} bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-300 disabled:text-gray-500`;
+export const btnDanger = `${base} bg-red-700 text-white hover:bg-red-800 disabled:bg-line-strong disabled:text-ink-faint`;
 
 // Header/toolbar actions that shouldn't compete with page content.
-export const btnGhost = `${base} text-gray-700 hover:bg-gray-100`;
+export const btnGhost = `${base} text-ink-soft hover:bg-accent-tint hover:text-accent-strong`;

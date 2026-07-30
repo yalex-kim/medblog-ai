@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Nanum_Myeongjo } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -7,9 +7,17 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+// Body face for generated articles only. Korean has no system serif, so the
+// Hangul subset has to be loaded for 명조 to render at all — without it the
+// text silently falls back to the UI sans.
+const nanumMyeongjo = Nanum_Myeongjo({
+  variable: "--font-serif-ko",
+  weight: ["400", "700"],
+  // No `subsets` here on purpose: Google does not expose Korean as a named
+  // subset, so requesting one would filter the Hangul unicode-ranges out.
+  // Omitting it serves every range, which requires preload: false.
+  preload: false,
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${nanumMyeongjo.variable} antialiased`}
       >
         {children}
       </body>

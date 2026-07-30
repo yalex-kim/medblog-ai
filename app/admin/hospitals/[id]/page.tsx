@@ -148,10 +148,10 @@ export default function HospitalDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-ink-faint">로딩 중...</p>
         </div>
       </div>
     );
@@ -159,7 +159,7 @@ export default function HospitalDetailPage() {
 
   if (error || !hospital) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || '병원을 찾을 수 없습니다.'}</p>
           <button
@@ -174,18 +174,18 @@ export default function HospitalDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-paper">
+      <header className="bg-surface shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/admin')}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-ink-soft hover:text-ink"
               >
                 ← 뒤로
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-ink">
                 병원 관리: {hospital.hospital_name || hospital.hospital_id}
               </h1>
             </div>
@@ -204,7 +204,7 @@ export default function HospitalDetailPage() {
           {/* Left Column - Hospital Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">기본 정보</h2>
                 {!isEditing ? (
@@ -237,7 +237,7 @@ export default function HospitalDetailPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="detail-hospital-id" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-hospital-id" className="block text-sm font-medium text-ink-soft mb-1">
                     병원 ID (로그인용)
                   </label>
                   <input
@@ -245,12 +245,12 @@ export default function HospitalDetailPage() {
                     type="text"
                     value={hospital.hospital_id}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="detail-hospital-name" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-hospital-name" className="block text-sm font-medium text-ink-soft mb-1">
                     병원명
                   </label>
                   <input
@@ -259,12 +259,12 @@ export default function HospitalDetailPage() {
                     value={isEditing ? editedData.hospital_name || '' : hospital.hospital_name || '-'}
                     onChange={(e) => setEditedData({ ...editedData, hospital_name: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="detail-department" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-department" className="block text-sm font-medium text-ink-soft mb-1">
                     진료과목
                   </label>
                   <input
@@ -273,12 +273,12 @@ export default function HospitalDetailPage() {
                     value={isEditing ? editedData.department || '' : hospital.department}
                     onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="detail-address" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-address" className="block text-sm font-medium text-ink-soft mb-1">
                     주소
                   </label>
                   <input
@@ -287,12 +287,12 @@ export default function HospitalDetailPage() {
                     value={isEditing ? editedData.address || '' : hospital.address || '-'}
                     onChange={(e) => setEditedData({ ...editedData, address: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="detail-services" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-services" className="block text-sm font-medium text-ink-soft mb-1">
                     주요 서비스
                   </label>
                   <textarea
@@ -301,40 +301,40 @@ export default function HospitalDetailPage() {
                     onChange={(e) => setEditedData({ ...editedData, main_services: e.target.value })}
                     disabled={!isEditing}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
               </div>
             </div>
 
             {/* Blog Posts */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <h2 className="text-xl font-semibold mb-4">생성된 블로그 글 ({blogPosts.length}개)</h2>
               {blogPosts.length === 0 ? (
-                <p className="text-gray-500">아직 생성된 글이 없습니다.</p>
+                <p className="text-ink-faint">아직 생성된 글이 없습니다.</p>
               ) : (
                 <div className="space-y-2">
                   {blogPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      className="p-4 border border-line rounded-lg hover:bg-paper"
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-gray-900">{post.title}</h3>
-                          <p className="text-sm text-gray-500 mt-1">{post.topic}</p>
+                          <h3 className="font-medium text-ink">{post.title}</h3>
+                          <p className="text-sm text-ink-faint mt-1">{post.topic}</p>
                         </div>
                         <div className="text-right">
                           <span
                             className={`text-xs px-2 py-1 rounded-full ${
                               post.posted_to_blog
                                 ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                                : 'bg-accent-tint text-ink'
                             }`}
                           >
                             {post.posted_to_blog ? '게시됨' : '미게시'}
                           </span>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-ink-faint mt-1">
                             {new Date(post.created_at).toLocaleDateString('ko-KR')}
                           </p>
                         </div>
@@ -349,11 +349,11 @@ export default function HospitalDetailPage() {
           {/* Right Column - Status & Actions */}
           <div className="space-y-6">
             {/* Status */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <h2 className="text-xl font-semibold mb-4">계정 상태</h2>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">초기 설정</span>
+                  <span className="text-sm text-ink-soft">초기 설정</span>
                   <span
                     className={`text-sm px-2 py-1 rounded-full ${
                       hospital.is_initial_setup_complete
@@ -365,7 +365,7 @@ export default function HospitalDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">비밀번호 변경 필요</span>
+                  <span className="text-sm text-ink-soft">비밀번호 변경 필요</span>
                   <span
                     className={`text-sm px-2 py-1 rounded-full ${
                       hospital.must_change_password
@@ -377,8 +377,8 @@ export default function HospitalDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">등록일</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-ink-soft">등록일</span>
+                  <span className="text-sm text-ink">
                     {new Date(hospital.created_at).toLocaleDateString('ko-KR')}
                   </span>
                 </div>
@@ -386,13 +386,13 @@ export default function HospitalDetailPage() {
             </div>
 
             {/* Actions */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <h2 className="text-xl font-semibold mb-4">관리 작업</h2>
 
               {issuedPassword && (
                 <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
                   <p className="text-sm text-green-800">비밀번호가 재설정되었습니다. 병원에 전달해주세요.</p>
-                  <p className="mt-2 rounded bg-white px-3 py-2 font-mono text-sm break-all">
+                  <p className="mt-2 rounded bg-surface px-3 py-2 font-mono text-sm break-all">
                     {issuedPassword}
                   </p>
                   <button
@@ -415,7 +415,7 @@ export default function HospitalDetailPage() {
               ) : (
                 <form onSubmit={handleResetPassword} className="space-y-3">
                   <div>
-                    <label htmlFor="reset-password" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="reset-password" className="block text-sm font-medium text-ink-soft mb-1">
                       새 임시 비밀번호
                     </label>
                     <input
@@ -425,7 +425,7 @@ export default function HospitalDetailPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="병원에 전달할 비밀번호"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                       required
                     />
                   </div>
@@ -450,16 +450,16 @@ export default function HospitalDetailPage() {
 
             {/* Blog Settings */}
             {hospital.blog_platform && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-surface rounded-card shadow-card p-6">
                 <h2 className="text-xl font-semibold mb-4">블로그 설정</h2>
                 <div className="space-y-3">
                   <div>
-                    <span className="text-sm text-gray-600">플랫폼</span>
-                    <p className="text-sm font-medium text-gray-900">{hospital.blog_platform}</p>
+                    <span className="text-sm text-ink-soft">플랫폼</span>
+                    <p className="text-sm font-medium text-ink">{hospital.blog_platform}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">블로그 ID</span>
-                    <p className="text-sm font-medium text-gray-900">{hospital.blog_id || '-'}</p>
+                    <span className="text-sm text-ink-soft">블로그 ID</span>
+                    <p className="text-sm font-medium text-ink">{hospital.blog_id || '-'}</p>
                   </div>
                 </div>
               </div>

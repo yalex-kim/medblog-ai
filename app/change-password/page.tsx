@@ -58,11 +58,11 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-paper flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-surface rounded-card shadow-card p-8">
           <h1 className="text-2xl font-bold mb-2">비밀번호 변경</h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-ink-soft mb-6">
             보안을 위해 비밀번호를 변경해주세요.
           </p>
 
@@ -80,7 +80,7 @@ export default function ChangePasswordPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="current-password" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="current-password" className="block text-sm font-medium text-ink mb-2">
                 현재 비밀번호
               </label>
               <input
@@ -89,13 +89,13 @@ export default function ChangePasswordPage() {
                 autoComplete="current-password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="new-password" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="new-password" className="block text-sm font-medium text-ink mb-2">
                 새 비밀번호
               </label>
               <input
@@ -104,14 +104,14 @@ export default function ChangePasswordPage() {
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">8자 이상</p>
+              <p className="text-sm text-ink-faint mt-1">8자 이상</p>
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="confirm-password" className="block text-sm font-medium text-ink mb-2">
                 새 비밀번호 확인
               </label>
               <input
@@ -120,7 +120,7 @@ export default function ChangePasswordPage() {
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                 required
               />
             </div>

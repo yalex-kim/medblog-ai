@@ -34,13 +34,13 @@ export function ConfirmDialog({
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl"
+        className="w-full max-w-sm rounded-lg bg-surface p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-gray-900">
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold text-ink">
           {title}
         </h2>
-        <p className="mt-2 text-sm text-gray-600">{message}</p>
+        <p className="mt-2 text-sm text-ink-soft">{message}</p>
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onCancel} className={`${btnSecondary} px-4 py-2`}>
             {cancelLabel}

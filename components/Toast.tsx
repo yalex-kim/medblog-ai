@@ -36,8 +36,8 @@ export function useToasts() {
 }
 
 const TONE_STYLES: Record<ToastTone, string> = {
-  success: 'bg-white border-green-200 text-green-800',
-  error: 'bg-white border-red-200 text-red-800',
+  success: 'bg-surface border-green-200 text-green-800',
+  error: 'bg-surface border-red-200 text-red-800',
 };
 
 export function ToastViewport({
@@ -66,7 +66,7 @@ export function ToastViewport({
             type="button"
             onClick={() => onDismiss(toast.id)}
             aria-label="알림 닫기"
-            className="shrink-0 text-gray-400 hover:text-gray-600"
+            className="shrink-0 text-ink-faint hover:text-ink-soft"
           >
             ×
           </button>

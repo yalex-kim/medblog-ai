@@ -396,12 +396,12 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-paper">
+      <header className="bg-surface shadow">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{hospitalName || 'MedBlog AI'}</h1>
-            <p className="text-sm text-gray-500">{department}</p>
+            <h1 className="text-2xl font-bold text-ink">{hospitalName || 'MedBlog AI'}</h1>
+            <p className="text-sm text-ink-faint">{department}</p>
           </div>
           <div className="flex gap-3">
             <button
@@ -424,17 +424,17 @@ export default function DashboardPage() {
         {!blogResult ? (
           <>
             {/* Greeting */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="bg-surface rounded-card shadow-card p-6 mb-6">
               <h2 className="text-xl font-semibold mb-2">
                 안녕하세요, {hospitalName}님!
               </h2>
-              <p className="text-gray-600">
+              <p className="text-ink-soft">
                 오늘은 어떤 주제의 블로그 글을 작성하시겠습니까?
               </p>
             </div>
 
             {/* AI Topic Recommendations */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="bg-surface rounded-card shadow-card p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">AI 주제 추천</h3>
                 <button
@@ -449,13 +449,13 @@ export default function DashboardPage() {
               {topics && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-green-700 mb-3">정보성 주제</h4>
+                    <h4 className="text-xs font-semibold tracking-wider uppercase text-ink-faint mb-3">정보성 주제</h4>
                     <div className="space-y-2">
                       {topics.정보성.map((topic, idx) => (
                         <button
                           key={idx}
                           onClick={() => generateBlog(topic)}
-                          className="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors text-gray-900"
+                          className="w-full text-left px-4 py-3 bg-paper hover:bg-accent-tint border border-line rounded-xl transition-colors text-ink"
                         >
                           {topic}
                         </button>
@@ -464,13 +464,13 @@ export default function DashboardPage() {
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-purple-700 mb-3">홍보성 주제</h4>
+                    <h4 className="text-xs font-semibold tracking-wider uppercase text-ink-faint mb-3">홍보성 주제</h4>
                     <div className="space-y-2">
                       {topics.홍보성.map((topic, idx) => (
                         <button
                           key={idx}
                           onClick={() => generateBlog(topic)}
-                          className="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors text-gray-900"
+                          className="w-full text-left px-4 py-3 bg-accent-tint hover:bg-line rounded-xl transition-colors text-ink"
                         >
                           {topic}
                         </button>
@@ -482,7 +482,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Custom Topic Input */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="bg-surface rounded-card shadow-card p-6 mb-6">
               <h3 className="text-lg font-semibold mb-4">
                 <label htmlFor="custom-topic">직접 주제 입력</label>
               </h3>
@@ -493,7 +493,7 @@ export default function DashboardPage() {
                   value={customTopic}
                   onChange={(e) => setCustomTopic(e.target.value)}
                   placeholder="원하는 주제를 입력하세요"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                   onKeyDown={(e) => e.key === 'Enter' && customTopic && generateBlog(customTopic)}
                 />
                 <button
@@ -508,21 +508,21 @@ export default function DashboardPage() {
 
             {/* Saved Posts */}
             {savedPosts.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-surface rounded-card shadow-card p-6">
                 <h3 className="text-lg font-semibold mb-4">저장된 글 (최근 10개)</h3>
                 <div className="space-y-2">
                   {savedPosts.map((post) => (
                     <button
                       key={post.id}
                       onClick={() => loadSavedPost(post)}
-                      className="w-full text-left px-4 py-3 border border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="w-full text-left px-4 py-3 border border-line hover:border-accent hover:bg-accent-tint rounded-lg transition-colors"
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{post.title}</h4>
-                          <p className="text-sm text-gray-500 mt-1">{post.topic}</p>
+                          <h4 className="font-medium text-ink">{post.title}</h4>
+                          <p className="text-sm text-ink-faint mt-1">{post.topic}</p>
                         </div>
-                        <span className="text-xs text-gray-400 ml-4">
+                        <span className="text-xs text-ink-faint ml-4">
                           {new Date(post.created_at).toLocaleDateString('ko-KR')}
                         </span>
                       </div>
@@ -534,13 +534,13 @@ export default function DashboardPage() {
 
             {generatingBlog && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-8 max-w-sm">
+                <div className="bg-surface rounded-lg p-8 max-w-sm">
                   <div className="flex flex-col items-center">
-                    <svg className="animate-spin h-12 w-12 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-12 w-12 text-accent mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="text-gray-900 font-medium">블로그 글을 생성하고 있습니다...</p>
+                    <p className="text-ink font-medium">블로그 글을 생성하고 있습니다...</p>
                   </div>
                 </div>
               </div>
@@ -549,26 +549,30 @@ export default function DashboardPage() {
         ) : (
           /* Blog Result */
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="bg-surface rounded-card shadow-card p-8">
               {isEditMode ? (
                 <textarea
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
-                  className="w-full min-h-[600px] p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  className="w-full min-h-[600px] p-4 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent font-mono text-sm"
                   placeholder="글 내용을 편집하세요..."
                 />
               ) : (
-                <div className="markdown-content">
+                // Serif at a constrained measure: this is the one place the
+                // hospital reads the article as a reader would, so awkward
+                // sentences and typos have to surface here.
+                <div className="markdown-content font-serif max-w-[62ch] break-keep">
                   <ReactMarkdown
                     components={{
-                      h1: ({...props}) => <h1 className="text-3xl font-bold text-gray-900 mb-6 mt-0" {...props} />,
-                      h2: ({...props}) => <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8" {...props} />,
-                      h3: ({...props}) => <h3 className="text-xl font-bold text-gray-900 mb-3 mt-6" {...props} />,
-                      p: ({...props}) => <p className="text-gray-700 leading-relaxed mb-4" {...props} />,
-                      strong: ({...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                      ul: ({...props}) => <ul className="list-disc pl-6 my-4 space-y-2" {...props} />,
-                      ol: ({...props}) => <ol className="list-decimal pl-6 my-4 space-y-2" {...props} />,
-                      li: ({...props}) => <li className="text-gray-700" {...props} />,
+                      h1: ({...props}) => <h1 className="text-[2rem] font-bold text-ink leading-snug text-balance mb-6 mt-0" {...props} />,
+                      h2: ({...props}) => <h2 className="text-2xl font-bold text-ink leading-snug text-balance mb-4 mt-10" {...props} />,
+                      h3: ({...props}) => <h3 className="text-xl font-bold text-ink mb-3 mt-7" {...props} />,
+                      p: ({...props}) => <p className="text-[1.0625rem] leading-[1.85] text-ink-soft mb-5" {...props} />,
+                      strong: ({...props}) => <strong className="font-bold text-ink" {...props} />,
+                      a: ({...props}) => <a className="text-accent underline underline-offset-2 decoration-line-strong hover:decoration-accent" target="_blank" rel="noopener noreferrer" {...props} />,
+                      ul: ({...props}) => <ul className="list-disc pl-6 my-5 space-y-2.5 text-[1.0625rem] leading-[1.85]" {...props} />,
+                      ol: ({...props}) => <ol className="list-decimal pl-6 my-5 space-y-2.5 text-[1.0625rem] leading-[1.85]" {...props} />,
+                      li: ({...props}) => <li className="text-ink-soft" {...props} />,
                     }}
                   >
                     {blogResult.content}
@@ -617,9 +621,9 @@ export default function DashboardPage() {
 
             {/* Image Prompts Section */}
             {imagePrompts.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+              <div className="bg-accent-tint border border-line rounded-card p-6">
                 <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-                  <h3 className="font-semibold text-purple-900">이미지 프롬프트 ({imagePrompts.length}/5)</h3>
+                  <h3 className="font-semibold text-accent-strong">이미지 프롬프트 ({imagePrompts.length}/5)</h3>
                   {/* flex-wrap: two selects plus two buttons overflow narrow
                       viewports without it. */}
                   <div className="flex flex-wrap items-center gap-3">
@@ -628,7 +632,7 @@ export default function DashboardPage() {
                       aria-label="이미지 생성 모델"
                       value={imageProvider}
                       onChange={(e) => setImageProvider(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-line-strong rounded-lg text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
                     >
                       <option value="openai">GPT-Image-2 (OpenAI)</option>
                       <option value="gemini">Gemini 3 Pro Image (Google)</option>
@@ -639,7 +643,7 @@ export default function DashboardPage() {
                         aria-label="이미지 품질"
                         value={imageQuality}
                         onChange={(e) => setImageQuality(e.target.value as 'low' | 'medium' | 'high')}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-3 py-2 border border-line-strong rounded-lg text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-accent"
                       >
                         <option value="low">Low (~30초)</option>
                         <option value="medium">Medium (~80초)</option>
@@ -667,18 +671,18 @@ export default function DashboardPage() {
                     const isRegenerating = regeneratingIndices.has(index);
 
                     return (
-                      <div key={index} className="bg-white rounded-lg p-4 border border-purple-100 flex flex-col">
+                      <div key={index} className="bg-surface rounded-card p-4 border border-line flex flex-col">
                         {/* Top: Prompt info */}
                         <div className="flex items-start gap-3 mb-4">
-                          <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-semibold">
+                          <div className="flex-shrink-0 w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center font-semibold">
                             {index + 1}
                           </div>
                           <div className="flex-1 space-y-2 min-w-0">
                             <div>
                               {editingPrompts ? (
-                                <label htmlFor={`prompt-${index}-type`} className="text-xs font-semibold text-gray-600 uppercase">Type</label>
+                                <label htmlFor={`prompt-${index}-type`} className="text-xs font-semibold text-ink-soft uppercase">Type</label>
                               ) : (
-                                <span className="block text-xs font-semibold text-gray-600 uppercase">Type</span>
+                                <span className="block text-xs font-semibold text-ink-soft uppercase">Type</span>
                               )}
                               {editingPrompts ? (
                                 <select
@@ -689,7 +693,7 @@ export default function DashboardPage() {
                                     newPrompts[index].type = e.target.value;
                                     setImagePrompts(newPrompts);
                                   }}
-                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  className="w-full mt-1 px-3 py-2 border border-line-strong rounded-lg text-sm"
                                 >
                                   <option value="INTRO">INTRO</option>
                                   <option value="MEDICAL">MEDICAL</option>
@@ -699,16 +703,16 @@ export default function DashboardPage() {
                                   <option value="INFOGRAPHIC">INFOGRAPHIC</option>
                                 </select>
                               ) : (
-                                <div className="mt-1 px-3 py-2 bg-purple-100 text-purple-900 rounded-lg text-sm font-semibold inline-block">
+                                <div className="mt-1 px-3 py-2 bg-accent-tint text-accent-strong rounded-lg text-sm font-semibold inline-block">
                                   {prompt.type}
                                 </div>
                               )}
                             </div>
                             <div>
                               {editingPrompts ? (
-                                <label htmlFor={`prompt-${index}-description`} className="text-xs font-semibold text-gray-600 uppercase">이미지 묘사</label>
+                                <label htmlFor={`prompt-${index}-description`} className="text-xs font-semibold text-ink-soft uppercase">이미지 묘사</label>
                               ) : (
-                                <span className="block text-xs font-semibold text-gray-600 uppercase">이미지 묘사</span>
+                                <span className="block text-xs font-semibold text-ink-soft uppercase">이미지 묘사</span>
                               )}
                               {editingPrompts ? (
                                 <textarea
@@ -719,19 +723,19 @@ export default function DashboardPage() {
                                     newPrompts[index].description = e.target.value;
                                     setImagePrompts(newPrompts);
                                   }}
-                                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                  className="w-full mt-1 px-3 py-2 border border-line-strong rounded-lg text-sm"
                                   rows={2}
                                 />
                               ) : (
-                                <p className="mt-1 text-gray-900 text-sm break-words">{prompt.description}</p>
+                                <p className="mt-1 text-ink text-sm break-words">{prompt.description}</p>
                               )}
                             </div>
                             {(prompt.type !== 'INTRO' && prompt.type !== 'LIFESTYLE') && (
                               <div>
                                 {editingPrompts ? (
-                                  <label htmlFor={`prompt-${index}-text`} className="text-xs font-semibold text-gray-600 uppercase">텍스트</label>
+                                  <label htmlFor={`prompt-${index}-text`} className="text-xs font-semibold text-ink-soft uppercase">텍스트</label>
                                 ) : (
-                                  <span className="block text-xs font-semibold text-gray-600 uppercase">텍스트</span>
+                                  <span className="block text-xs font-semibold text-ink-soft uppercase">텍스트</span>
                                 )}
                                 {editingPrompts ? (
                                   <input
@@ -743,10 +747,10 @@ export default function DashboardPage() {
                                       newPrompts[index].text = e.target.value;
                                       setImagePrompts(newPrompts);
                                     }}
-                                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    className="w-full mt-1 px-3 py-2 border border-line-strong rounded-lg text-sm"
                                   />
                                 ) : (
-                                  <p className="mt-1 text-blue-600 font-medium text-sm break-words">{prompt.text || '(없음)'}</p>
+                                  <p className="mt-1 text-accent font-medium text-sm break-words">{prompt.text || '(없음)'}</p>
                                 )}
                               </div>
                             )}
@@ -756,11 +760,11 @@ export default function DashboardPage() {
                         {/* Bottom: Image preview and buttons */}
                         <div className="space-y-2 mt-auto">
                           {image ? (
-                            <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                            <div className="relative w-full aspect-square bg-accent-tint rounded-lg overflow-hidden">
                               {isRegenerating && (
                                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-                                  <div className="bg-white rounded-lg p-3">
-                                    <svg className="animate-spin h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <div className="bg-surface rounded-lg p-3">
+                                    <svg className="animate-spin h-6 w-6 text-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
@@ -776,8 +780,8 @@ export default function DashboardPage() {
                               />
                             </div>
                           ) : (
-                            <div className="w-full aspect-square bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                              <p className="text-gray-400 text-sm text-center px-2">이미지 없음</p>
+                            <div className="w-full aspect-square bg-accent-tint rounded-lg flex items-center justify-center border-2 border-dashed border-line-strong">
+                              <p className="text-ink-faint text-sm text-center px-2">이미지 없음</p>
                             </div>
                           )}
                           <div className="flex flex-col gap-2">
