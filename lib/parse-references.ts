@@ -1,6 +1,9 @@
 export interface ParsedReference {
   title: string;
   url: string;
+  // Populated separately (see lib/extract-citations.ts) from Anthropic's
+  // actual citation metadata, not by this parser.
+  snippet?: string;
 }
 
 // Matches a trailing "[참고자료]" section through the end of the content.

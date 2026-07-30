@@ -21,6 +21,7 @@ interface ImageSuggestion {
 interface Reference {
   title: string;
   url: string;
+  snippet?: string;
 }
 
 interface BlogResult {
@@ -80,6 +81,19 @@ export default function DashboardPage() {
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedContent, setEditedContent] = useState('');
+  const [expandedRefs, setExpandedRefs] = useState<Set<number>>(new Set());
+
+  const toggleRef = (index: number) => {
+    setExpandedRefs(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   const fetchHospitalInfo = async () => {
     try {
@@ -169,6 +183,7 @@ export default function DashboardPage() {
     setCurrentPostId(post.id);
     setEditedContent(post.content);
     setIsEditMode(false);
+    setExpandedRefs(new Set());
 
     // Initialize image prompts from suggestions
     setImagePrompts(imageSuggestions.length > 0 ? imageSuggestions : []);
@@ -202,6 +217,7 @@ export default function DashboardPage() {
     setCurrentTopic(topic);
     setCurrentPostId(null);
     setIsEditMode(false);
+    setExpandedRefs(new Set());
 
     try {
       const response = await fetch('/api/generate-blog', {
@@ -563,21 +579,40 @@ export default function DashboardPage() {
 
               {blogResult.references && blogResult.references.length > 0 && (
                 <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-500 mb-2">참고자료</h4>
-                  <ul className="space-y-1">
-                    {blogResult.references.map((ref, i) => (
-                      <li key={i} className="text-sm">
-                        <a
-                          href={ref.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline break-all"
-                        >
-                          {ref.title}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
+                  <h4 className="text-sm font-semibold text-gray-500 mb-2">참고자료 확인</h4>
+                  <p className="text-xs text-gray-400 mb-3">
+                    본문 하단의 참고자료 링크는 이미 글에 포함되어 있습니다. 아래 항목을 눌러 실제 검색에서 인용된 원문을 확인할 수 있습니다.
+                  </p>
+                  <div className="space-y-2">
+                    {blogResult.references.map((ref, i) => {
+                      const isExpanded = expandedRefs.has(i);
+                      return (
+                        <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => toggleRef(i)}
+                            className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left text-sm hover:bg-gray-50"
+                          >
+                            <a
+                              href={ref.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-600 hover:underline break-all"
+                            >
+                              {ref.title}
+                            </a>
+                            <span className="text-gray-400 shrink-0">{isExpanded ? '▲' : '▼'}</span>
+                          </button>
+                          {isExpanded && (
+                            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-600">
+                              {ref.snippet ? `"${ref.snippet}"` : '검색 결과에서 인용된 원문을 찾지 못했습니다.'}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

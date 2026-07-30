@@ -5,6 +5,7 @@ import { getSession } from '@/lib/session';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
 import { parseReferences } from '@/lib/parse-references';
+import { extractCitedSnippets } from '@/lib/extract-citations';
 import { DEFAULT_TRUSTED_DOMAINS } from '@/lib/trusted-domains';
 import { isTrustedOrigin } from '@/lib/request-security';
 
@@ -133,10 +134,25 @@ export async function POST(request: NextRequest) {
       content = fullContent.replace(/\[이미지 키워드\][\s\S]*$/, '').trim();
     }
 
-    // 참고자료 섹션 추출 및 본문에서 제거 (web_search로 확인한 출처)
+    // 참고자료 섹션 추출 (web_search로 확인한 출처). Claude가 직접 적은
+    // "[참고자료]" 텍스트는 제거하고, 실제 인용 메타데이터(citations)에서
+    // 확인된 스니펫을 덧붙인 뒤 정상적인 마크다운 링크로 본문에 다시 삽입한다 —
+    // 그래야 이 글을 그대로 복사/게시해도 출처 링크가 함께 따라간다.
     const referencesResult = parseReferences(content);
+    const citedSnippets = extractCitedSnippets(message.content);
+    const references = referencesResult.references.map((ref) => ({
+      ...ref,
+      snippet: citedSnippets.get(ref.url)?.snippet,
+    }));
+
     content = referencesResult.content;
-    const references = referencesResult.references;
+    if (references.length > 0) {
+      const referencesMarkdown = [
+        '## 참고자료',
+        ...references.map((ref) => `- [${ref.title}](${ref.url})`),
+      ].join('\n');
+      content = `${content}\n\n${referencesMarkdown}`;
+    }
 
     // Extract title from content
     const titleMatch = content.match(/^#\s+(.+)$/m);
