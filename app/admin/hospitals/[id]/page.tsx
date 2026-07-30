@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { ToastViewport, useToasts } from '@/components/Toast';
+import { btnDanger, btnPrimary, btnSecondary } from '@/lib/ui';
 
 interface Hospital {
   id: string;
@@ -36,6 +38,13 @@ export default function HospitalDetailPage() {
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<Hospital>>({});
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  // Held in a dismissible panel rather than a toast: the admin has to read
+  // and relay this password, so it must not disappear on a timer.
+  const [issuedPassword, setIssuedPassword] = useState<string | null>(null);
+
+  const { toasts, showToast, dismiss } = useToasts();
 
   useEffect(() => {
     const checkAuthAndFetchData = async () => {
@@ -96,20 +105,20 @@ export default function HospitalDetailPage() {
       });
 
       if (response.ok) {
-        alert('저장되었습니다!');
+        showToast('success', '저장되었습니다.');
         setIsEditing(false);
         fetchHospitalData();
       } else {
-        alert('저장에 실패했습니다.');
+        showToast('error', '저장에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error saving:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      showToast('error', '저장 중 오류가 발생했습니다.');
     }
   };
 
-  const handleResetPassword = async () => {
-    const newPassword = prompt('새로운 임시 비밀번호를 입력하세요:');
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newPassword) return;
 
     try {
@@ -120,13 +129,15 @@ export default function HospitalDetailPage() {
       });
 
       if (response.ok) {
-        alert(`비밀번호가 재설정되었습니다.\n새 비밀번호: ${newPassword}\n병원에 전달해주세요.`);
+        setIssuedPassword(newPassword);
+        setNewPassword('');
+        setShowResetForm(false);
       } else {
-        alert('비밀번호 재설정에 실패했습니다.');
+        showToast('error', '비밀번호 재설정에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error resetting password:', error);
-      alert('비밀번호 재설정 중 오류가 발생했습니다.');
+      showToast('error', '비밀번호 재설정 중 오류가 발생했습니다.');
     }
   };
 
@@ -137,10 +148,10 @@ export default function HospitalDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-900">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-ink-faint">로딩 중...</p>
         </div>
       </div>
     );
@@ -148,12 +159,12 @@ export default function HospitalDetailPage() {
 
   if (error || !hospital) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || '병원을 찾을 수 없습니다.'}</p>
           <button
             onClick={() => router.push('/admin')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className={`${btnSecondary} px-4 py-2`}
           >
             목록으로 돌아가기
           </button>
@@ -163,24 +174,24 @@ export default function HospitalDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-paper">
+      <header className="bg-surface shadow">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/admin')}
-                className="text-gray-600 hover:text-gray-900"
+                className="text-ink-soft hover:text-ink"
               >
                 ← 뒤로
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-ink">
                 병원 관리: {hospital.hospital_name || hospital.hospital_id}
               </h1>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300"
+              className={`${btnSecondary} px-4 py-2`}
             >
               로그아웃
             </button>
@@ -193,13 +204,13 @@ export default function HospitalDetailPage() {
           {/* Left Column - Hospital Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">기본 정보</h2>
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className={`${btnSecondary} px-4 py-2`}
                   >
                     수정
                   </button>
@@ -210,13 +221,13 @@ export default function HospitalDetailPage() {
                         setIsEditing(false);
                         setEditedData(hospital);
                       }}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                      className={`${btnSecondary} px-4 py-2`}
                     >
                       취소
                     </button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className={`${btnPrimary} px-4 py-2`}
                     >
                       저장
                     </button>
@@ -226,99 +237,104 @@ export default function HospitalDetailPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-hospital-id" className="block text-sm font-medium text-ink-soft mb-1">
                     병원 ID (로그인용)
                   </label>
                   <input
+                    id="detail-hospital-id"
                     type="text"
                     value={hospital.hospital_id}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-hospital-name" className="block text-sm font-medium text-ink-soft mb-1">
                     병원명
                   </label>
                   <input
+                    id="detail-hospital-name"
                     type="text"
                     value={isEditing ? editedData.hospital_name || '' : hospital.hospital_name || '-'}
                     onChange={(e) => setEditedData({ ...editedData, hospital_name: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-department" className="block text-sm font-medium text-ink-soft mb-1">
                     진료과목
                   </label>
                   <input
+                    id="detail-department"
                     type="text"
                     value={isEditing ? editedData.department || '' : hospital.department}
                     onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-address" className="block text-sm font-medium text-ink-soft mb-1">
                     주소
                   </label>
                   <input
+                    id="detail-address"
                     type="text"
                     value={isEditing ? editedData.address || '' : hospital.address || '-'}
                     onChange={(e) => setEditedData({ ...editedData, address: e.target.value })}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-services" className="block text-sm font-medium text-ink-soft mb-1">
                     주요 서비스
                   </label>
                   <textarea
+                    id="detail-services"
                     value={isEditing ? editedData.main_services || '' : hospital.main_services || '-'}
                     onChange={(e) => setEditedData({ ...editedData, main_services: e.target.value })}
                     disabled={!isEditing}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100"
+                    className="w-full px-3 py-2 border border-line-strong rounded-lg disabled:bg-accent-tint"
                   />
                 </div>
               </div>
             </div>
 
             {/* Blog Posts */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <h2 className="text-xl font-semibold mb-4">생성된 블로그 글 ({blogPosts.length}개)</h2>
               {blogPosts.length === 0 ? (
-                <p className="text-gray-500">아직 생성된 글이 없습니다.</p>
+                <p className="text-ink-faint">아직 생성된 글이 없습니다.</p>
               ) : (
                 <div className="space-y-2">
                   {blogPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      className="p-4 border border-line rounded-lg hover:bg-paper"
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-medium text-gray-900">{post.title}</h3>
-                          <p className="text-sm text-gray-500 mt-1">{post.topic}</p>
+                          <h3 className="font-medium text-ink">{post.title}</h3>
+                          <p className="text-sm text-ink-faint mt-1">{post.topic}</p>
                         </div>
                         <div className="text-right">
                           <span
                             className={`text-xs px-2 py-1 rounded-full ${
                               post.posted_to_blog
                                 ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
+                                : 'bg-accent-tint text-ink'
                             }`}
                           >
                             {post.posted_to_blog ? '게시됨' : '미게시'}
                           </span>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-ink-faint mt-1">
                             {new Date(post.created_at).toLocaleDateString('ko-KR')}
                           </p>
                         </div>
@@ -333,11 +349,11 @@ export default function HospitalDetailPage() {
           {/* Right Column - Status & Actions */}
           <div className="space-y-6">
             {/* Status */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <h2 className="text-xl font-semibold mb-4">계정 상태</h2>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">초기 설정</span>
+                  <span className="text-sm text-ink-soft">초기 설정</span>
                   <span
                     className={`text-sm px-2 py-1 rounded-full ${
                       hospital.is_initial_setup_complete
@@ -349,7 +365,7 @@ export default function HospitalDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">비밀번호 변경 필요</span>
+                  <span className="text-sm text-ink-soft">비밀번호 변경 필요</span>
                   <span
                     className={`text-sm px-2 py-1 rounded-full ${
                       hospital.must_change_password
@@ -361,8 +377,8 @@ export default function HospitalDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">등록일</span>
-                  <span className="text-sm text-gray-900">
+                  <span className="text-sm text-ink-soft">등록일</span>
+                  <span className="text-sm text-ink">
                     {new Date(hospital.created_at).toLocaleDateString('ko-KR')}
                   </span>
                 </div>
@@ -370,30 +386,80 @@ export default function HospitalDetailPage() {
             </div>
 
             {/* Actions */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-surface rounded-card shadow-card p-6">
               <h2 className="text-xl font-semibold mb-4">관리 작업</h2>
-              <div className="space-y-3">
+
+              {issuedPassword && (
+                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
+                  <p className="text-sm text-green-800">비밀번호가 재설정되었습니다. 병원에 전달해주세요.</p>
+                  <p className="mt-2 rounded bg-surface px-3 py-2 font-mono text-sm break-all">
+                    {issuedPassword}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIssuedPassword(null)}
+                    className="mt-3 text-sm text-green-800 underline hover:text-green-900"
+                  >
+                    확인했습니다
+                  </button>
+                </div>
+              )}
+
+              {!showResetForm ? (
                 <button
-                  onClick={handleResetPassword}
-                  className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  onClick={() => setShowResetForm(true)}
+                  className={`${btnDanger} w-full px-4 py-2`}
                 >
                   비밀번호 재설정
                 </button>
-              </div>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-3">
+                  <div>
+                    <label htmlFor="reset-password" className="block text-sm font-medium text-ink-soft mb-1">
+                      새 임시 비밀번호
+                    </label>
+                    <input
+                      id="reset-password"
+                      type="text"
+                      autoComplete="off"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="병원에 전달할 비밀번호"
+                      className="w-full px-3 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetForm(false);
+                        setNewPassword('');
+                      }}
+                      className={`${btnSecondary} flex-1 px-4 py-2`}
+                    >
+                      취소
+                    </button>
+                    <button type="submit" className={`${btnDanger} flex-1 px-4 py-2`}>
+                      재설정
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
 
             {/* Blog Settings */}
             {hospital.blog_platform && (
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-surface rounded-card shadow-card p-6">
                 <h2 className="text-xl font-semibold mb-4">블로그 설정</h2>
                 <div className="space-y-3">
                   <div>
-                    <span className="text-sm text-gray-600">플랫폼</span>
-                    <p className="text-sm font-medium text-gray-900">{hospital.blog_platform}</p>
+                    <span className="text-sm text-ink-soft">플랫폼</span>
+                    <p className="text-sm font-medium text-ink">{hospital.blog_platform}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-600">블로그 ID</span>
-                    <p className="text-sm font-medium text-gray-900">{hospital.blog_id || '-'}</p>
+                    <span className="text-sm text-ink-soft">블로그 ID</span>
+                    <p className="text-sm font-medium text-ink">{hospital.blog_id || '-'}</p>
                   </div>
                 </div>
               </div>
@@ -401,6 +467,8 @@ export default function HospitalDetailPage() {
           </div>
         </div>
       </main>
+
+      <ToastViewport toasts={toasts} onDismiss={dismiss} />
     </div>
   );
 }

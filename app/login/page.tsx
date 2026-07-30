@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { btnPrimary } from '@/lib/ui';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,25 +70,25 @@ export default function LoginPage() {
   // Show loading while checking session
   if (checking) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-b from-accent-tint to-surface flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-900">로딩 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-ink">로딩 중...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-accent-tint to-surface flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">MedBlog AI</h1>
-          <p className="text-gray-900">병원 블로그 자동 생성</p>
+          <h1 className="text-3xl font-bold text-accent mb-2">MedBlog AI</h1>
+          <p className="text-ink-soft">병원 블로그 자동 생성</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h2 className="text-2xl font-semibold mb-6 text-gray-900">로그인</h2>
+        <div className="bg-surface rounded-card shadow-card p-8">
+          <h2 className="text-2xl font-semibold mb-6 text-ink">로그인</h2>
 
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -97,27 +98,31 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="hospital-id" className="block text-sm font-medium text-ink mb-2">
                 병원 ID
               </label>
               <input
+                id="hospital-id"
                 type="text"
+                autoComplete="username"
                 value={hospitalId}
                 onChange={(e) => setHospitalId(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-ink"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-ink mb-2">
                 비밀번호
               </label>
               <input
+                id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-3 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent text-ink"
                 required
               />
             </div>
@@ -125,7 +130,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className={`${btnPrimary} w-full py-3`}
             >
               {loading ? '로그인 중...' : '로그인'}
             </button>

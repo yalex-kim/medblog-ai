@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { DEFAULT_TRUSTED_DOMAINS, isValidDomainEntry } from '@/lib/trusted-domains';
+import { btnPrimary, btnSecondary } from '@/lib/ui';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -15,6 +17,9 @@ export default function SettingsPage() {
   const [mainServices, setMainServices] = useState<string[]>([]);
   const [serviceInput, setServiceInput] = useState('');
   const [address, setAddress] = useState('');
+  const [trustedDomains, setTrustedDomains] = useState<string[]>([]);
+  const [domainInput, setDomainInput] = useState('');
+  const [domainError, setDomainError] = useState('');
   const [blogPlatform, setBlogPlatform] = useState('naver');
   const [blogId, setBlogId] = useState('');
   const [blogPassword, setBlogPassword] = useState('');
@@ -32,6 +37,7 @@ export default function SettingsPage() {
         setDepartment(h.department || '산부인과');
         setMainServices(h.main_services || []);
         setAddress(h.address || '');
+        setTrustedDomains(h.trusted_domains && h.trusted_domains.length > 0 ? h.trusted_domains : DEFAULT_TRUSTED_DOMAINS);
         setBlogPlatform(h.blog_platform || 'naver');
         setBlogId(h.blog_id || '');
         setBlogBoardName(h.blog_board_name || '');
@@ -71,6 +77,24 @@ export default function SettingsPage() {
     setMainServices(mainServices.filter(s => s !== service));
   };
 
+  const addDomain = () => {
+    const value = domainInput.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!value) return;
+    if (!isValidDomainEntry(value)) {
+      setDomainError('올바른 도메인 형식이 아닙니다. 예: health.kr');
+      return;
+    }
+    if (!trustedDomains.includes(value)) {
+      setTrustedDomains([...trustedDomains, value]);
+    }
+    setDomainInput('');
+    setDomainError('');
+  };
+
+  const removeDomain = (domain: string) => {
+    setTrustedDomains(trustedDomains.filter(d => d !== domain));
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -86,6 +110,7 @@ export default function SettingsPage() {
           department,
           main_services: mainServices,
           address,
+          trusted_domains: trustedDomains,
           blog_platform: blogPlatform,
           blog_id: blogId,
           blog_password_encrypted: blogPassword || undefined,
@@ -118,10 +143,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-paper">
+      <header className="bg-surface shadow">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">병원 설정</h1>
+          <h1 className="text-3xl font-bold text-ink">병원 설정</h1>
         </div>
       </header>
 
@@ -151,28 +176,30 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSave} className="bg-white rounded-lg shadow-md p-8 space-y-6">
+        <form onSubmit={handleSave} className="bg-surface rounded-card shadow-card p-8 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="hospital-name" className="block text-sm font-medium text-ink mb-2">
               병원 이름 <span className="text-red-500">*</span>
             </label>
             <input
+              id="hospital-name"
               type="text"
               value={hospitalName}
               onChange={(e) => setHospitalName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="department" className="block text-sm font-medium text-ink mb-2">
               진료 과목
             </label>
             <select
+              id="department"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
             >
               <option value="산부인과">산부인과</option>
               <option value="내과">내과</option>
@@ -183,22 +210,23 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="service-input" className="block text-sm font-medium text-ink mb-2">
               주요 진료 항목 <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2 mb-2">
               <input
+              id="service-input"
                 type="text"
                 value={serviceInput}
                 onChange={(e) => setServiceInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addService())}
                 placeholder="예: 임신 관리"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
               />
               <button
                 type="button"
                 onClick={addService}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className={`${btnSecondary} px-4 py-2`}
               >
                 추가
               </button>
@@ -207,13 +235,13 @@ export default function SettingsPage() {
               {mainServices.map(service => (
                 <span
                   key={service}
-                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                  className="bg-accent-tint text-accent-strong px-3 py-1 rounded-full text-sm flex items-center gap-2"
                 >
                   {service}
                   <button
                     type="button"
                     onClick={() => removeService(service)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-accent hover:text-accent-strong"
                   >
                     ×
                   </button>
@@ -223,17 +251,68 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="address" className="block text-sm font-medium text-ink mb-2">
               주소 <span className="text-red-500">*</span>
             </label>
             <input
+              id="address"
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="예: 서울시 강남구 ..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
               required
             />
+          </div>
+
+          <div className="border-t pt-6">
+            <label htmlFor="domain-input" className="block text-sm font-medium text-ink mb-2">
+              참고자료 신뢰 도메인
+            </label>
+            <p className="text-sm text-ink-faint mb-2">
+              블로그 글 작성 시 이 도메인들에서만 자료를 검색해 참고 링크로 표시합니다. 병원에서 직접 추가/삭제할 수 있습니다.
+            </p>
+            <div className="flex gap-2 mb-1">
+              <input
+              id="domain-input"
+                type="text"
+                value={domainInput}
+                onChange={(e) => { setDomainInput(e.target.value); setDomainError(''); }}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDomain())}
+                placeholder="예: health.kr"
+                className="flex-1 px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
+              />
+              <button
+                type="button"
+                onClick={addDomain}
+                className={`${btnSecondary} px-4 py-2`}
+              >
+                추가
+              </button>
+            </div>
+            {domainError && <p className="text-sm text-red-600 mb-2">{domainError}</p>}
+            <div className="flex flex-wrap gap-2">
+              {trustedDomains.map(domain => (
+                <span
+                  key={domain}
+                  className="bg-accent-tint text-accent-strong px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                >
+                  {domain}
+                  <button
+                    type="button"
+                    onClick={() => removeDomain(domain)}
+                    className="text-accent hover:text-accent-strong"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {trustedDomains.length === 0 && (
+                <p className="text-sm text-ink-faint">
+                  등록된 도메인이 없으면 기본 신뢰 도메인 목록이 사용됩니다.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="border-t pt-6">
@@ -241,53 +320,58 @@ export default function SettingsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-platform" className="block text-sm font-medium text-ink mb-2">
                   플랫폼
                 </label>
                 <select
+              id="blog-platform"
                   value={blogPlatform}
                   onChange={(e) => setBlogPlatform(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                 >
                   <option value="naver">네이버 블로그</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-id" className="block text-sm font-medium text-ink mb-2">
                   블로그 ID <span className="text-red-500">*</span>
                 </label>
                 <input
+              id="blog-id"
                   type="text"
                   value={blogId}
                   onChange={(e) => setBlogId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-password" className="block text-sm font-medium text-ink mb-2">
                   블로그 비밀번호 (저장/변경 시에만 입력)
                 </label>
                 <input
+              id="blog-password"
+              autoComplete="new-password"
                   type="password"
                   value={blogPassword}
                   onChange={(e) => setBlogPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-board-name" className="block text-sm font-medium text-ink mb-2">
                   게시판 이름 <span className="text-red-500">*</span>
                 </label>
                 <input
+              id="blog-board-name"
                   type="text"
                   value={blogBoardName}
                   onChange={(e) => setBlogBoardName(e.target.value)}
                   placeholder="예: 건강정보"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-line-strong rounded-lg focus:ring-2 focus:ring-accent"
                   required
                 />
               </div>
@@ -297,7 +381,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400"
+            className={`${btnPrimary} w-full py-3`}
           >
             {saving ? '저장 중...' : '설정 저장'}
           </button>

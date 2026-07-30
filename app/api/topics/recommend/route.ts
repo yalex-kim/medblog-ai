@@ -93,12 +93,19 @@ export async function POST(request: NextRequest) {
 - ${hospital.department} 전문 내용으로`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-5',
       max_tokens: 2000,
+      // Simple structured list generation — no reasoning depth needed, and
+      // thinking (on by default for this model) was pushing content past
+      // content[0] below, silently emptying the parsed topic lists.
+      thinking: { type: 'disabled' },
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const content = message.content[0].type === 'text' ? message.content[0].text : '';
+    const content = message.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map(block => block.text)
+      .join('');
 
     // Parse topics
     const infoMatch = content.match(/\[정보성\]([\s\S]*?)(?=\[홍보성\]|$)/);

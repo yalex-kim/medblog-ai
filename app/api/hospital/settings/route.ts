@@ -3,9 +3,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getSession } from '@/lib/session';
 import { encryptBlogPassword } from '@/lib/blog-credential-crypto';
 import { isTrustedOrigin } from '@/lib/request-security';
+import { isValidDomainEntry } from '@/lib/trusted-domains';
 
 const MAX_TEXT_FIELD_LENGTH = 200;
 const MAX_SERVICES = 20;
+const MAX_DOMAINS = 20;
 
 // Get hospital settings
 export async function GET(request: NextRequest) {
@@ -66,6 +68,17 @@ function isValidUpdatePayload(updates: Record<string, unknown>): boolean {
     }
   }
 
+  if (updates.trusted_domains !== undefined) {
+    const domains = updates.trusted_domains;
+    if (
+      !Array.isArray(domains) ||
+      domains.length > MAX_DOMAINS ||
+      !domains.every((d) => typeof d === 'string' && d.length <= MAX_TEXT_FIELD_LENGTH && isValidDomainEntry(d))
+    ) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -99,6 +112,7 @@ export async function PUT(request: NextRequest) {
       'department',
       'main_services',
       'address',
+      'trusted_domains',
       'blog_platform',
       'blog_id',
       'blog_password_encrypted',
