@@ -18,10 +18,16 @@ interface ImageSuggestion {
   text: string;
 }
 
+interface Reference {
+  title: string;
+  url: string;
+}
+
 interface BlogResult {
   content: string;
   imageKeywords: string[];
   imageSuggestions?: ImageSuggestion[];
+  references?: Reference[];
 }
 
 interface GeneratedImage {
@@ -45,6 +51,7 @@ interface SavedPost {
   topic: string;
   content: string;
   image_keywords: string[];
+  reference_links?: Reference[];
   created_at: string;
   images?: GeneratedImage[];
 }
@@ -153,6 +160,7 @@ export default function DashboardPage() {
       content: post.content,
       imageKeywords: post.image_keywords || [],
       imageSuggestions: imageSuggestions.length > 0 ? imageSuggestions : undefined,
+      references: post.reference_links && post.reference_links.length > 0 ? post.reference_links : undefined,
     };
 
     console.log('Setting blogResult to:', blogData);
@@ -550,6 +558,26 @@ export default function DashboardPage() {
                   >
                     {blogResult.content}
                   </ReactMarkdown>
+                </div>
+              )}
+
+              {blogResult.references && blogResult.references.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-500 mb-2">참고자료</h4>
+                  <ul className="space-y-1">
+                    {blogResult.references.map((ref, i) => (
+                      <li key={i} className="text-sm">
+                        <a
+                          href={ref.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline break-all"
+                        >
+                          {ref.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

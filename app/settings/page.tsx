@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { DEFAULT_TRUSTED_DOMAINS, isValidDomainEntry } from '@/lib/trusted-domains';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -15,6 +16,9 @@ export default function SettingsPage() {
   const [mainServices, setMainServices] = useState<string[]>([]);
   const [serviceInput, setServiceInput] = useState('');
   const [address, setAddress] = useState('');
+  const [trustedDomains, setTrustedDomains] = useState<string[]>([]);
+  const [domainInput, setDomainInput] = useState('');
+  const [domainError, setDomainError] = useState('');
   const [blogPlatform, setBlogPlatform] = useState('naver');
   const [blogId, setBlogId] = useState('');
   const [blogPassword, setBlogPassword] = useState('');
@@ -32,6 +36,7 @@ export default function SettingsPage() {
         setDepartment(h.department || '산부인과');
         setMainServices(h.main_services || []);
         setAddress(h.address || '');
+        setTrustedDomains(h.trusted_domains && h.trusted_domains.length > 0 ? h.trusted_domains : DEFAULT_TRUSTED_DOMAINS);
         setBlogPlatform(h.blog_platform || 'naver');
         setBlogId(h.blog_id || '');
         setBlogBoardName(h.blog_board_name || '');
@@ -71,6 +76,24 @@ export default function SettingsPage() {
     setMainServices(mainServices.filter(s => s !== service));
   };
 
+  const addDomain = () => {
+    const value = domainInput.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!value) return;
+    if (!isValidDomainEntry(value)) {
+      setDomainError('올바른 도메인 형식이 아닙니다. 예: health.kr');
+      return;
+    }
+    if (!trustedDomains.includes(value)) {
+      setTrustedDomains([...trustedDomains, value]);
+    }
+    setDomainInput('');
+    setDomainError('');
+  };
+
+  const removeDomain = (domain: string) => {
+    setTrustedDomains(trustedDomains.filter(d => d !== domain));
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -86,6 +109,7 @@ export default function SettingsPage() {
           department,
           main_services: mainServices,
           address,
+          trusted_domains: trustedDomains,
           blog_platform: blogPlatform,
           blog_id: blogId,
           blog_password_encrypted: blogPassword || undefined,
@@ -234,6 +258,55 @@ export default function SettingsPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               required
             />
+          </div>
+
+          <div className="border-t pt-6">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              참고자료 신뢰 도메인
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              블로그 글 작성 시 이 도메인들에서만 자료를 검색해 참고 링크로 표시합니다. 병원에서 직접 추가/삭제할 수 있습니다.
+            </p>
+            <div className="flex gap-2 mb-1">
+              <input
+                type="text"
+                value={domainInput}
+                onChange={(e) => { setDomainInput(e.target.value); setDomainError(''); }}
+                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDomain())}
+                placeholder="예: health.kr"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={addDomain}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                추가
+              </button>
+            </div>
+            {domainError && <p className="text-sm text-red-600 mb-2">{domainError}</p>}
+            <div className="flex flex-wrap gap-2">
+              {trustedDomains.map(domain => (
+                <span
+                  key={domain}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                >
+                  {domain}
+                  <button
+                    type="button"
+                    onClick={() => removeDomain(domain)}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {trustedDomains.length === 0 && (
+                <p className="text-sm text-gray-400">
+                  등록된 도메인이 없으면 기본 신뢰 도메인 목록이 사용됩니다.
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="border-t pt-6">

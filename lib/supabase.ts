@@ -26,6 +26,7 @@ export interface Hospital {
   department: string;
   main_services: string[] | null;
   address: string | null;
+  trusted_domains: string[] | null;
   blog_platform: string;
   blog_id: string | null;
   blog_password_encrypted: string | null;
@@ -44,6 +45,7 @@ export interface BlogPost {
   topic: string;
   keywords: string[] | null;
   image_keywords: string[] | null;
+  reference_links: { title: string; url: string }[] | null;
   category: '정보성' | '홍보성' | null;
   posted_to_blog: boolean;
   posted_at: string | null;

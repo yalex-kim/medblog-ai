@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const { data: posts, error } = await supabaseAdmin
       .from('blog_posts')
-      .select('id, title, topic, created_at, content, image_keywords')
+      .select('id, title, topic, created_at, content, image_keywords, reference_links')
       .eq('hospital_id', sessionData.id)
       .order('created_at', { ascending: false })
       .limit(10);
