@@ -12,17 +12,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Geist carries no Hangul glyphs, so Korean text falls through to the
+   platform UI font. Keep that fallback chain explicit rather than letting
+   the browser pick an arbitrary default. */
 body {
   background: var(--background);
-  color: #171717;
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Apple SD Gothic Neo",
+    "Malgun Gothic", "맑은 고딕", sans-serif;
 }
 
 /* Override default input/textarea/select text color for better readability */

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
+import { ToastViewport, useToasts } from '@/components/Toast';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { btnGhost, btnPrimary, btnSecondary } from '@/lib/ui';
 
 interface Topics {
   정보성: string[];
@@ -18,17 +21,10 @@ interface ImageSuggestion {
   text: string;
 }
 
-interface Reference {
-  title: string;
-  url: string;
-  snippets?: string[];
-}
-
 interface BlogResult {
   content: string;
   imageKeywords: string[];
   imageSuggestions?: ImageSuggestion[];
-  references?: Reference[];
 }
 
 interface GeneratedImage {
@@ -52,7 +48,6 @@ interface SavedPost {
   topic: string;
   content: string;
   image_keywords: string[];
-  reference_links?: Reference[];
   created_at: string;
   images?: GeneratedImage[];
 }
@@ -81,19 +76,10 @@ export default function DashboardPage() {
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedContent, setEditedContent] = useState('');
-  const [expandedRefs, setExpandedRefs] = useState<Set<number>>(new Set());
+  const [copied, setCopied] = useState(false);
+  const [pendingRegenIndex, setPendingRegenIndex] = useState<number | null>(null);
 
-  const toggleRef = (index: number) => {
-    setExpandedRefs(prev => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
-  };
+  const { toasts, showToast, dismiss } = useToasts();
 
   const fetchHospitalInfo = async () => {
     try {
@@ -174,7 +160,6 @@ export default function DashboardPage() {
       content: post.content,
       imageKeywords: post.image_keywords || [],
       imageSuggestions: imageSuggestions.length > 0 ? imageSuggestions : undefined,
-      references: post.reference_links && post.reference_links.length > 0 ? post.reference_links : undefined,
     };
 
     console.log('Setting blogResult to:', blogData);
@@ -183,7 +168,7 @@ export default function DashboardPage() {
     setCurrentPostId(post.id);
     setEditedContent(post.content);
     setIsEditMode(false);
-    setExpandedRefs(new Set());
+    setCopied(false);
 
     // Initialize image prompts from suggestions
     setImagePrompts(imageSuggestions.length > 0 ? imageSuggestions : []);
@@ -217,7 +202,7 @@ export default function DashboardPage() {
     setCurrentTopic(topic);
     setCurrentPostId(null);
     setIsEditMode(false);
-    setExpandedRefs(new Set());
+    setCopied(false);
 
     try {
       const response = await fetch('/api/generate-blog', {
@@ -245,11 +230,11 @@ export default function DashboardPage() {
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
-        alert('블로그 생성에 실패했습니다.');
+        showToast('error', errorData.error || '블로그 생성에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error generating blog:', error);
-      alert('오류가 발생했습니다.');
+      showToast('error', '블로그 생성 중 오류가 발생했습니다.');
     } finally {
       setGeneratingBlog(false);
     }
@@ -276,14 +261,14 @@ export default function DashboardPage() {
         setBlogResult({ ...blogResult!, content: editedContent, imageSuggestions });
         setImagePrompts(imageSuggestions);
         setIsEditMode(false);
-        alert('저장되었습니다!');
+        showToast('success', '저장되었습니다.');
         fetchSavedPosts();
       } else {
-        alert('저장에 실패했습니다.');
+        showToast('error', '저장에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error saving edit:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      showToast('error', '저장 중 오류가 발생했습니다.');
     }
   };
 
@@ -298,7 +283,7 @@ export default function DashboardPage() {
   const handleGenerateImages = async () => {
     // Use imagePrompts (limited to 5)
     if (imagePrompts.length === 0) {
-      alert('이미지 프롬프트가 없습니다.');
+      showToast('error', '이미지 프롬프트가 없습니다.');
       return;
     }
 
@@ -325,24 +310,28 @@ export default function DashboardPage() {
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
-        alert('이미지 생성에 실패했습니다: ' + (errorData.error || ''));
+        showToast('error', `이미지 생성에 실패했습니다. ${errorData.error || ''}`.trim());
       }
     } catch (error) {
       console.error('Error generating images:', error);
-      alert('이미지 생성 중 오류가 발생했습니다.');
+      showToast('error', '이미지 생성 중 오류가 발생했습니다.');
     } finally {
       setGeneratingImages(false);
     }
   };
 
-  const handleRegenerateImage = async (index: number) => {
-    const image = generatedImages[index];
-    const prompt = imagePrompts[index];
-
-    // Show confirmation dialog only if image exists
-    if (image && !confirm('이미지를 재생성하시겠습니까? 기존 이미지는 삭제됩니다.')) {
+  // Overwriting an existing image needs confirmation; generating into an
+  // empty slot doesn't. The dialog is driven by pendingRegenIndex.
+  const handleRegenerateImage = (index: number) => {
+    if (generatedImages[index]) {
+      setPendingRegenIndex(index);
       return;
     }
+    void regenerateImage(index);
+  };
+
+  const regenerateImage = async (index: number) => {
+    const prompt = imagePrompts[index];
 
     // Add index to regenerating set
     setRegeneratingIndices(prev => new Set(prev).add(index));
@@ -372,11 +361,11 @@ export default function DashboardPage() {
       } else {
         const errorData = await response.json();
         console.error('Error response:', errorData);
-        alert('이미지 재생성에 실패했습니다: ' + (errorData.error || ''));
+        showToast('error', `이미지 재생성에 실패했습니다. ${errorData.error || ''}`.trim());
       }
     } catch (error) {
       console.error('Error regenerating image:', error);
-      alert('이미지 재생성 중 오류가 발생했습니다.');
+      showToast('error', '이미지 재생성 중 오류가 발생했습니다.');
     } finally {
       // Remove index from regenerating set
       setRegeneratingIndices(prev => {
@@ -387,10 +376,17 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCopyAll = () => {
-    if (blogResult?.content) {
-      navigator.clipboard.writeText(blogResult.content);
-      alert('복사되었습니다!');
+  // Confirms inline on the button itself rather than interrupting with a
+  // dialog for what is a trivially reversible action.
+  const handleCopyAll = async () => {
+    if (!blogResult?.content) return;
+    try {
+      await navigator.clipboard.writeText(blogResult.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Error copying content:', error);
+      showToast('error', '복사에 실패했습니다. 직접 선택해 복사해주세요.');
     }
   };
 
@@ -405,18 +401,18 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{hospitalName || 'MedBlog AI'}</h1>
-            <p className="text-sm text-gray-900">{department}</p>
+            <p className="text-sm text-gray-500">{department}</p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => router.push('/settings')}
-              className="px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg"
+              className={`${btnGhost} px-4 py-2`}
             >
               설정
             </button>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-gray-900 hover:bg-gray-100 rounded-lg"
+              className={`${btnGhost} px-4 py-2`}
             >
               로그아웃
             </button>
@@ -432,7 +428,7 @@ export default function DashboardPage() {
               <h2 className="text-xl font-semibold mb-2">
                 안녕하세요, {hospitalName}님!
               </h2>
-              <p className="text-gray-900">
+              <p className="text-gray-600">
                 오늘은 어떤 주제의 블로그 글을 작성하시겠습니까?
               </p>
             </div>
@@ -444,7 +440,7 @@ export default function DashboardPage() {
                 <button
                   onClick={fetchTopicRecommendations}
                   disabled={loadingTopics}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                  className={`${btnPrimary} px-4 py-2`}
                 >
                   {loadingTopics ? '추천 중...' : '주제 추천 받기'}
                 </button>
@@ -487,9 +483,12 @@ export default function DashboardPage() {
 
             {/* Custom Topic Input */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">직접 주제 입력</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                <label htmlFor="custom-topic">직접 주제 입력</label>
+              </h3>
               <div className="flex gap-3">
                 <input
+                  id="custom-topic"
                   type="text"
                   value={customTopic}
                   onChange={(e) => setCustomTopic(e.target.value)}
@@ -500,7 +499,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => customTopic && generateBlog(customTopic)}
                   disabled={!customTopic || generatingBlog}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                  className={`${btnPrimary} px-6 py-3`}
                 >
                   생성
                 </button>
@@ -576,73 +575,23 @@ export default function DashboardPage() {
                   </ReactMarkdown>
                 </div>
               )}
-
-              {blogResult.references && blogResult.references.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-500 mb-2">참고자료 확인</h4>
-                  <p className="text-xs text-gray-400 mb-3">
-                    본문 하단의 참고자료 링크는 이미 글에 포함되어 있습니다. 아래 항목을 눌러 실제로 인용된 원문을 확인할 수 있습니다.
-                  </p>
-                  <div className="space-y-2">
-                    {blogResult.references.map((ref, i) => {
-                      const isExpanded = expandedRefs.has(i);
-                      const snippetCount = ref.snippets?.length ?? 0;
-                      return (
-                        <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => toggleRef(i)}
-                            aria-expanded={isExpanded}
-                            className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left text-sm hover:bg-gray-50"
-                          >
-                            <span className="text-gray-900 break-all">{ref.title}</span>
-                            <span className="flex items-center gap-2 shrink-0">
-                              {snippetCount > 0 && (
-                                <span className="text-xs text-gray-400">인용 {snippetCount}개</span>
-                              )}
-                              <span className="text-gray-400">{isExpanded ? '▲' : '▼'}</span>
-                            </span>
-                          </button>
-                          {isExpanded && (
-                            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-600 space-y-2">
-                              {snippetCount > 0 ? (
-                                ref.snippets!.map((snippet, si) => <p key={si}>&quot;{snippet}&quot;</p>)
-                              ) : (
-                                <p className="text-gray-400">
-                                  인용 원문 저장 기능이 추가되기 전에 작성된 글입니다.
-                                </p>
-                              )}
-                              <a
-                                href={ref.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block pt-1 text-blue-600 hover:underline break-all"
-                              >
-                                원문 페이지 열기 →
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
+            {/* Exactly one primary action at a time: 저장 while editing,
+                전체 복사 otherwise. */}
             <div className="flex flex-wrap gap-3">
               {currentPostId && (
                 <>
                   <button
                     onClick={toggleEditMode}
-                    className="flex-1 min-w-[150px] bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700"
+                    className={`${btnSecondary} flex-1 min-w-[150px] py-3 px-6`}
                   >
                     {isEditMode ? '취소' : '수정'}
                   </button>
                   {isEditMode && (
                     <button
                       onClick={handleSaveEdit}
-                      className="flex-1 min-w-[150px] bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700"
+                      className={`${btnPrimary} flex-1 min-w-[150px] py-3 px-6`}
                     >
                       저장
                     </button>
@@ -651,16 +600,16 @@ export default function DashboardPage() {
               )}
               <button
                 onClick={handleCopyAll}
-                className="flex-1 min-w-[150px] bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700"
+                className={`${isEditMode ? btnSecondary : btnPrimary} flex-1 min-w-[150px] py-3 px-6`}
               >
-                전체 복사
+                {copied ? '복사됨 ✓' : '전체 복사'}
               </button>
               <button
                 onClick={() => {
                   // Use history.back() to return to previous state
                   window.history.back();
                 }}
-                className="flex-1 min-w-[150px] bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700"
+                className={`${btnSecondary} flex-1 min-w-[150px] py-3 px-6`}
               >
                 새 글 작성
               </button>
@@ -671,12 +620,15 @@ export default function DashboardPage() {
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
                 <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
                   <h3 className="font-semibold text-purple-900">이미지 프롬프트 ({imagePrompts.length}/5)</h3>
-                  <div className="flex items-center gap-3">
+                  {/* flex-wrap: two selects plus two buttons overflow narrow
+                      viewports without it. */}
+                  <div className="flex flex-wrap items-center gap-3">
                     {/* Image model selector */}
                     <select
+                      aria-label="이미지 생성 모델"
                       value={imageProvider}
                       onChange={(e) => setImageProvider(e.target.value)}
-                      className="px-3 py-2 border border-purple-300 rounded-lg text-sm bg-white text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="openai">GPT-Image-2 (OpenAI)</option>
                       <option value="gemini">Gemini 3 Pro Image (Google)</option>
@@ -684,9 +636,10 @@ export default function DashboardPage() {
                     {/* Quality selector — OpenAI only */}
                     {imageProvider === 'openai' && (
                       <select
+                        aria-label="이미지 품질"
                         value={imageQuality}
                         onChange={(e) => setImageQuality(e.target.value as 'low' | 'medium' | 'high')}
-                        className="px-3 py-2 border border-purple-300 rounded-lg text-sm bg-white text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="low">Low (~30초)</option>
                         <option value="medium">Medium (~80초)</option>
@@ -696,13 +649,13 @@ export default function DashboardPage() {
                     <button
                       onClick={handleGenerateImages}
                       disabled={generatingImages}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 text-sm"
+                      className={`${btnPrimary} px-4 py-2 text-sm`}
                     >
                       {generatingImages ? '생성 중...' : '전체 생성'}
                     </button>
                     <button
                       onClick={() => setEditingPrompts(!editingPrompts)}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                      className={`${btnSecondary} px-4 py-2 text-sm`}
                     >
                       {editingPrompts ? '완료' : '편집'}
                     </button>
@@ -722,9 +675,14 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex-1 space-y-2 min-w-0">
                             <div>
-                              <label className="text-xs font-semibold text-gray-600 uppercase">Type</label>
+                              {editingPrompts ? (
+                                <label htmlFor={`prompt-${index}-type`} className="text-xs font-semibold text-gray-600 uppercase">Type</label>
+                              ) : (
+                                <span className="block text-xs font-semibold text-gray-600 uppercase">Type</span>
+                              )}
                               {editingPrompts ? (
                                 <select
+                                  id={`prompt-${index}-type`}
                                   value={prompt.type}
                                   onChange={(e) => {
                                     const newPrompts = [...imagePrompts];
@@ -747,9 +705,14 @@ export default function DashboardPage() {
                               )}
                             </div>
                             <div>
-                              <label className="text-xs font-semibold text-gray-600 uppercase">이미지 묘사</label>
+                              {editingPrompts ? (
+                                <label htmlFor={`prompt-${index}-description`} className="text-xs font-semibold text-gray-600 uppercase">이미지 묘사</label>
+                              ) : (
+                                <span className="block text-xs font-semibold text-gray-600 uppercase">이미지 묘사</span>
+                              )}
                               {editingPrompts ? (
                                 <textarea
+                                  id={`prompt-${index}-description`}
                                   value={prompt.description}
                                   onChange={(e) => {
                                     const newPrompts = [...imagePrompts];
@@ -765,9 +728,14 @@ export default function DashboardPage() {
                             </div>
                             {(prompt.type !== 'INTRO' && prompt.type !== 'LIFESTYLE') && (
                               <div>
-                                <label className="text-xs font-semibold text-gray-600 uppercase">텍스트</label>
+                                {editingPrompts ? (
+                                  <label htmlFor={`prompt-${index}-text`} className="text-xs font-semibold text-gray-600 uppercase">텍스트</label>
+                                ) : (
+                                  <span className="block text-xs font-semibold text-gray-600 uppercase">텍스트</span>
+                                )}
                                 {editingPrompts ? (
                                   <input
+                                    id={`prompt-${index}-text`}
                                     type="text"
                                     value={prompt.text}
                                     onChange={(e) => {
@@ -816,25 +784,24 @@ export default function DashboardPage() {
                             <button
                               onClick={() => handleRegenerateImage(index)}
                               disabled={isRegenerating}
-                              className="w-full px-3 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 disabled:bg-gray-400"
+                              className={`${btnSecondary} w-full px-3 py-2 text-sm`}
                             >
-                              {isRegenerating ? '생성 중...' : '이미지 생성'}
+                              {isRegenerating ? '생성 중...' : image ? '다시 생성' : '이미지 생성'}
                             </button>
-                            {image && (
+                            {image ? (
                               <a
                                 href={image.url}
                                 download={`${image.keyword}.png`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full text-center px-3 py-2 bg-orange-600 text-white rounded-lg text-sm hover:bg-orange-700"
+                                className={`${btnSecondary} w-full text-center px-3 py-2 text-sm`}
                               >
                                 다운로드
                               </a>
-                            )}
-                            {!image && (
+                            ) : (
                               <button
                                 disabled
-                                className="w-full px-3 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm cursor-not-allowed"
+                                className={`${btnSecondary} w-full px-3 py-2 text-sm`}
                               >
                                 다운로드
                               </button>
@@ -850,6 +817,20 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      <ConfirmDialog
+        open={pendingRegenIndex !== null}
+        title="이미지를 다시 생성할까요?"
+        message="기존 이미지는 삭제되고 새 이미지로 교체됩니다."
+        confirmLabel="다시 생성"
+        onConfirm={() => {
+          const index = pendingRegenIndex;
+          setPendingRegenIndex(null);
+          if (index !== null) void regenerateImage(index);
+        }}
+        onCancel={() => setPendingRegenIndex(null)}
+      />
+      <ToastViewport toasts={toasts} onDismiss={dismiss} />
     </div>
   );
 }

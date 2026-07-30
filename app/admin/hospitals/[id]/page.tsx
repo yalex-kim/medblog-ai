@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { ToastViewport, useToasts } from '@/components/Toast';
+import { btnDanger, btnPrimary, btnSecondary } from '@/lib/ui';
 
 interface Hospital {
   id: string;
@@ -36,6 +38,13 @@ export default function HospitalDetailPage() {
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<Hospital>>({});
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  // Held in a dismissible panel rather than a toast: the admin has to read
+  // and relay this password, so it must not disappear on a timer.
+  const [issuedPassword, setIssuedPassword] = useState<string | null>(null);
+
+  const { toasts, showToast, dismiss } = useToasts();
 
   useEffect(() => {
     const checkAuthAndFetchData = async () => {
@@ -96,20 +105,20 @@ export default function HospitalDetailPage() {
       });
 
       if (response.ok) {
-        alert('저장되었습니다!');
+        showToast('success', '저장되었습니다.');
         setIsEditing(false);
         fetchHospitalData();
       } else {
-        alert('저장에 실패했습니다.');
+        showToast('error', '저장에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error saving:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      showToast('error', '저장 중 오류가 발생했습니다.');
     }
   };
 
-  const handleResetPassword = async () => {
-    const newPassword = prompt('새로운 임시 비밀번호를 입력하세요:');
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!newPassword) return;
 
     try {
@@ -120,13 +129,15 @@ export default function HospitalDetailPage() {
       });
 
       if (response.ok) {
-        alert(`비밀번호가 재설정되었습니다.\n새 비밀번호: ${newPassword}\n병원에 전달해주세요.`);
+        setIssuedPassword(newPassword);
+        setNewPassword('');
+        setShowResetForm(false);
       } else {
-        alert('비밀번호 재설정에 실패했습니다.');
+        showToast('error', '비밀번호 재설정에 실패했습니다.');
       }
     } catch (error) {
       console.error('Error resetting password:', error);
-      alert('비밀번호 재설정 중 오류가 발생했습니다.');
+      showToast('error', '비밀번호 재설정 중 오류가 발생했습니다.');
     }
   };
 
@@ -140,7 +151,7 @@ export default function HospitalDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-900">로딩 중...</p>
+          <p className="text-gray-500">로딩 중...</p>
         </div>
       </div>
     );
@@ -153,7 +164,7 @@ export default function HospitalDetailPage() {
           <p className="text-red-600 mb-4">{error || '병원을 찾을 수 없습니다.'}</p>
           <button
             onClick={() => router.push('/admin')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className={`${btnSecondary} px-4 py-2`}
           >
             목록으로 돌아가기
           </button>
@@ -180,7 +191,7 @@ export default function HospitalDetailPage() {
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300"
+              className={`${btnSecondary} px-4 py-2`}
             >
               로그아웃
             </button>
@@ -199,7 +210,7 @@ export default function HospitalDetailPage() {
                 {!isEditing ? (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className={`${btnSecondary} px-4 py-2`}
                   >
                     수정
                   </button>
@@ -210,13 +221,13 @@ export default function HospitalDetailPage() {
                         setIsEditing(false);
                         setEditedData(hospital);
                       }}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                      className={`${btnSecondary} px-4 py-2`}
                     >
                       취소
                     </button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className={`${btnPrimary} px-4 py-2`}
                     >
                       저장
                     </button>
@@ -226,10 +237,11 @@ export default function HospitalDetailPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-hospital-id" className="block text-sm font-medium text-gray-700 mb-1">
                     병원 ID (로그인용)
                   </label>
                   <input
+                    id="detail-hospital-id"
                     type="text"
                     value={hospital.hospital_id}
                     disabled
@@ -238,10 +250,11 @@ export default function HospitalDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-hospital-name" className="block text-sm font-medium text-gray-700 mb-1">
                     병원명
                   </label>
                   <input
+                    id="detail-hospital-name"
                     type="text"
                     value={isEditing ? editedData.hospital_name || '' : hospital.hospital_name || '-'}
                     onChange={(e) => setEditedData({ ...editedData, hospital_name: e.target.value })}
@@ -251,10 +264,11 @@ export default function HospitalDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-department" className="block text-sm font-medium text-gray-700 mb-1">
                     진료과목
                   </label>
                   <input
+                    id="detail-department"
                     type="text"
                     value={isEditing ? editedData.department || '' : hospital.department}
                     onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
@@ -264,10 +278,11 @@ export default function HospitalDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-address" className="block text-sm font-medium text-gray-700 mb-1">
                     주소
                   </label>
                   <input
+                    id="detail-address"
                     type="text"
                     value={isEditing ? editedData.address || '' : hospital.address || '-'}
                     onChange={(e) => setEditedData({ ...editedData, address: e.target.value })}
@@ -277,10 +292,11 @@ export default function HospitalDetailPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="detail-services" className="block text-sm font-medium text-gray-700 mb-1">
                     주요 서비스
                   </label>
                   <textarea
+                    id="detail-services"
                     value={isEditing ? editedData.main_services || '' : hospital.main_services || '-'}
                     onChange={(e) => setEditedData({ ...editedData, main_services: e.target.value })}
                     disabled={!isEditing}
@@ -372,14 +388,64 @@ export default function HospitalDetailPage() {
             {/* Actions */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">관리 작업</h2>
-              <div className="space-y-3">
+
+              {issuedPassword && (
+                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
+                  <p className="text-sm text-green-800">비밀번호가 재설정되었습니다. 병원에 전달해주세요.</p>
+                  <p className="mt-2 rounded bg-white px-3 py-2 font-mono text-sm break-all">
+                    {issuedPassword}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIssuedPassword(null)}
+                    className="mt-3 text-sm text-green-800 underline hover:text-green-900"
+                  >
+                    확인했습니다
+                  </button>
+                </div>
+              )}
+
+              {!showResetForm ? (
                 <button
-                  onClick={handleResetPassword}
-                  className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  onClick={() => setShowResetForm(true)}
+                  className={`${btnDanger} w-full px-4 py-2`}
                 >
                   비밀번호 재설정
                 </button>
-              </div>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-3">
+                  <div>
+                    <label htmlFor="reset-password" className="block text-sm font-medium text-gray-700 mb-1">
+                      새 임시 비밀번호
+                    </label>
+                    <input
+                      id="reset-password"
+                      type="text"
+                      autoComplete="off"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="병원에 전달할 비밀번호"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetForm(false);
+                        setNewPassword('');
+                      }}
+                      className={`${btnSecondary} flex-1 px-4 py-2`}
+                    >
+                      취소
+                    </button>
+                    <button type="submit" className={`${btnDanger} flex-1 px-4 py-2`}>
+                      재설정
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
 
             {/* Blog Settings */}
@@ -401,6 +467,8 @@ export default function HospitalDetailPage() {
           </div>
         </div>
       </main>
+
+      <ToastViewport toasts={toasts} onDismiss={dismiss} />
     </div>
   );
 }

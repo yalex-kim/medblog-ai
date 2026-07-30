@@ -94,10 +94,11 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="admin-username" className="block text-sm font-medium text-gray-300 mb-2">
                 관리자 ID
               </label>
               <input
+                id="admin-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -109,10 +110,11 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="admin-password" className="block text-sm font-medium text-gray-300 mb-2">
                 비밀번호
               </label>
               <input
+                id="admin-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

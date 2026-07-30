@@ -97,11 +97,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="hospital-id" className="block text-sm font-medium text-gray-900 mb-2">
                 병원 ID
               </label>
               <input
+                id="hospital-id"
                 type="text"
+                autoComplete="username"
                 value={hospitalId}
                 onChange={(e) => setHospitalId(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
@@ -110,11 +112,13 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900 mb-2">
                 비밀번호
               </label>
               <input
+                id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"

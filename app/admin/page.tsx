@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { btnPrimary, btnSecondary } from '@/lib/ui';
 
 interface Hospital {
   id: string;
@@ -111,7 +112,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-900">인증 확인 중...</p>
+          <p className="text-gray-500">인증 확인 중...</p>
         </div>
       </div>
     );
@@ -127,7 +128,7 @@ export default function AdminPage() {
             </h1>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg border border-gray-300"
+              className={`${btnSecondary} px-4 py-2`}
             >
               로그아웃
             </button>
@@ -152,7 +153,7 @@ export default function AdminPage() {
         <div className="mb-6">
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700"
+            className={`${showForm ? btnSecondary : btnPrimary} px-6 py-3`}
           >
             {showForm ? '취소' : '+ 새 병원 등록'}
           </button>
@@ -164,10 +165,12 @@ export default function AdminPage() {
             <h2 className="text-xl font-semibold mb-4">새 병원 계정 생성</h2>
             <form onSubmit={handleCreateHospital} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="new-hospital-id" className="block text-sm font-medium text-gray-900 mb-2">
                   병원 ID (로그인용)
                 </label>
                 <input
+                  id="new-hospital-id"
+                  autoComplete="off"
                   type="text"
                   value={hospitalId}
                   onChange={(e) => setHospitalId(e.target.value)}
@@ -177,26 +180,29 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="new-hospital-password" className="block text-sm font-medium text-gray-900 mb-2">
                   초기 비밀번호
                 </label>
                 <input
+                  id="new-hospital-password"
+                  autoComplete="new-password"
                   type="password"
                   value={initialPassword}
                   onChange={(e) => setInitialPassword(e.target.value)}
                   placeholder="병원에 전달할 초기 비밀번호"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-sm text-gray-900 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   * 병원은 첫 로그인 후 비밀번호를 변경할 수 있습니다.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="new-hospital-department" className="block text-sm font-medium text-gray-900 mb-2">
                   진료과목
                 </label>
                 <select
+                  id="new-hospital-department"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -211,7 +217,7 @@ export default function AdminPage() {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700"
+                className={`${btnPrimary} w-full py-3`}
               >
                 병원 계정 생성
               </button>
@@ -226,9 +232,9 @@ export default function AdminPage() {
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-900">로딩 중...</div>
+            <div className="p-8 text-center text-gray-500">로딩 중...</div>
           ) : hospitals.length === 0 ? (
-            <div className="p-8 text-center text-gray-900">
+            <div className="p-8 text-center text-gray-500">
               등록된 병원이 없습니다.
             </div>
           ) : (
@@ -236,19 +242,19 @@ export default function AdminPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       병원 ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       병원명
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       진료과목
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       초기 설정
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       등록일
                     </th>
                   </tr>

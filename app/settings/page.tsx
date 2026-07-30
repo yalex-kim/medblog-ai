@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_TRUSTED_DOMAINS, isValidDomainEntry } from '@/lib/trusted-domains';
+import { btnPrimary, btnSecondary } from '@/lib/ui';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -177,10 +178,11 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSave} className="bg-white rounded-lg shadow-md p-8 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="hospital-name" className="block text-sm font-medium text-gray-900 mb-2">
               병원 이름 <span className="text-red-500">*</span>
             </label>
             <input
+              id="hospital-name"
               type="text"
               value={hospitalName}
               onChange={(e) => setHospitalName(e.target.value)}
@@ -190,10 +192,11 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="department" className="block text-sm font-medium text-gray-900 mb-2">
               진료 과목
             </label>
             <select
+              id="department"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -207,11 +210,12 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="service-input" className="block text-sm font-medium text-gray-900 mb-2">
               주요 진료 항목 <span className="text-red-500">*</span>
             </label>
             <div className="flex gap-2 mb-2">
               <input
+              id="service-input"
                 type="text"
                 value={serviceInput}
                 onChange={(e) => setServiceInput(e.target.value)}
@@ -222,7 +226,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={addService}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className={`${btnSecondary} px-4 py-2`}
               >
                 추가
               </button>
@@ -247,10 +251,11 @@ export default function SettingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="address" className="block text-sm font-medium text-gray-900 mb-2">
               주소 <span className="text-red-500">*</span>
             </label>
             <input
+              id="address"
               type="text"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -261,7 +266,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="border-t pt-6">
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label htmlFor="domain-input" className="block text-sm font-medium text-gray-900 mb-2">
               참고자료 신뢰 도메인
             </label>
             <p className="text-sm text-gray-500 mb-2">
@@ -269,6 +274,7 @@ export default function SettingsPage() {
             </p>
             <div className="flex gap-2 mb-1">
               <input
+              id="domain-input"
                 type="text"
                 value={domainInput}
                 onChange={(e) => { setDomainInput(e.target.value); setDomainError(''); }}
@@ -279,7 +285,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={addDomain}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className={`${btnSecondary} px-4 py-2`}
               >
                 추가
               </button>
@@ -314,10 +320,11 @@ export default function SettingsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-platform" className="block text-sm font-medium text-gray-900 mb-2">
                   플랫폼
                 </label>
                 <select
+              id="blog-platform"
                   value={blogPlatform}
                   onChange={(e) => setBlogPlatform(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -327,10 +334,11 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-id" className="block text-sm font-medium text-gray-900 mb-2">
                   블로그 ID <span className="text-red-500">*</span>
                 </label>
                 <input
+              id="blog-id"
                   type="text"
                   value={blogId}
                   onChange={(e) => setBlogId(e.target.value)}
@@ -340,10 +348,12 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-password" className="block text-sm font-medium text-gray-900 mb-2">
                   블로그 비밀번호 (저장/변경 시에만 입력)
                 </label>
                 <input
+              id="blog-password"
+              autoComplete="new-password"
                   type="password"
                   value={blogPassword}
                   onChange={(e) => setBlogPassword(e.target.value)}
@@ -352,10 +362,11 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label htmlFor="blog-board-name" className="block text-sm font-medium text-gray-900 mb-2">
                   게시판 이름 <span className="text-red-500">*</span>
                 </label>
                 <input
+              id="blog-board-name"
                   type="text"
                   value={blogBoardName}
                   onChange={(e) => setBlogBoardName(e.target.value)}
@@ -370,7 +381,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400"
+            className={`${btnPrimary} w-full py-3`}
           >
             {saving ? '저장 중...' : '설정 저장'}
           </button>
