@@ -45,7 +45,7 @@ export interface BlogPost {
   topic: string;
   keywords: string[] | null;
   image_keywords: string[] | null;
-  reference_links: { title: string; url: string; snippet?: string }[] | null;
+  reference_links: { title: string; url: string; snippets?: string[] }[] | null;
   category: '정보성' | '홍보성' | null;
   posted_to_blog: boolean;
   posted_at: string | null;

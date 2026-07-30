@@ -33,7 +33,7 @@ describe('extractCitedSnippets', () => {
     expect(result.get('https://health.kr/example')).toEqual({
       url: 'https://health.kr/example',
       title: '약학정보원',
-      snippet: '이 약은 자궁근종 치료에 사용됩니다.',
+      snippets: ['이 약은 자궁근종 치료에 사용됩니다.'],
     });
   });
 
@@ -54,13 +54,22 @@ describe('extractCitedSnippets', () => {
     expect(extractCitedSnippets(content).size).toBe(0);
   });
 
-  it('keeps the first cited_text when the same url is cited multiple times', () => {
+  it('collects every distinct cited_text when the same url is cited multiple times', () => {
     const content: Anthropic.ContentBlock[] = [
       textBlock([webCitation({ cited_text: '첫 번째 인용' })]),
       textBlock([webCitation({ cited_text: '두 번째 인용' })]),
     ];
     const result = extractCitedSnippets(content);
-    expect(result.get('https://health.kr/example')?.snippet).toBe('첫 번째 인용');
+    expect(result.get('https://health.kr/example')?.snippets).toEqual(['첫 번째 인용', '두 번째 인용']);
+  });
+
+  it('does not duplicate an identical cited_text seen more than once', () => {
+    const content: Anthropic.ContentBlock[] = [
+      textBlock([webCitation({ cited_text: '같은 인용' })]),
+      textBlock([webCitation({ cited_text: '같은 인용' })]),
+    ];
+    const result = extractCitedSnippets(content);
+    expect(result.get('https://health.kr/example')?.snippets).toEqual(['같은 인용']);
   });
 
   it('dedupes multiple distinct urls', () => {

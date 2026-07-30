@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     const citedSnippets = extractCitedSnippets(message.content);
     const references = referencesResult.references.map((ref) => ({
       ...ref,
-      snippet: citedSnippets.get(ref.url)?.snippet,
+      snippets: citedSnippets.get(ref.url)?.snippets,
     }));
 
     content = referencesResult.content;

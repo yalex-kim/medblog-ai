@@ -21,7 +21,7 @@ interface ImageSuggestion {
 interface Reference {
   title: string;
   url: string;
-  snippet?: string;
+  snippets?: string[];
 }
 
 interface BlogResult {
@@ -605,8 +605,12 @@ export default function DashboardPage() {
                             <span className="text-gray-400 shrink-0">{isExpanded ? '▲' : '▼'}</span>
                           </button>
                           {isExpanded && (
-                            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-600">
-                              {ref.snippet ? `"${ref.snippet}"` : '검색 결과에서 인용된 원문을 찾지 못했습니다.'}
+                            <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 text-sm text-gray-600 space-y-2">
+                              {ref.snippets && ref.snippets.length > 0 ? (
+                                ref.snippets.map((snippet, si) => <p key={si}>&quot;{snippet}&quot;</p>)
+                              ) : (
+                                <p>검색 결과에서 인용된 원문을 찾지 못했습니다.</p>
+                              )}
                             </div>
                           )}
                         </div>
