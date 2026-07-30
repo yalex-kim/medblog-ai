@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
 import { parseReferences } from '@/lib/parse-references';
 import { extractCitedSnippets } from '@/lib/extract-citations';
+import { buildVerifiedReferences } from '@/lib/build-references';
 import { DEFAULT_TRUSTED_DOMAINS } from '@/lib/trusted-domains';
 import { isTrustedOrigin } from '@/lib/request-security';
 
@@ -134,16 +135,15 @@ export async function POST(request: NextRequest) {
       content = fullContent.replace(/\[이미지 키워드\][\s\S]*$/, '').trim();
     }
 
-    // 참고자료 섹션 추출 (web_search로 확인한 출처). Claude가 직접 적은
-    // "[참고자료]" 텍스트는 제거하고, 실제 인용 메타데이터(citations)에서
-    // 확인된 스니펫을 덧붙인 뒤 정상적인 마크다운 링크로 본문에 다시 삽입한다 —
-    // 그래야 이 글을 그대로 복사/게시해도 출처 링크가 함께 따라간다.
+    // 참고자료는 실제 인용 메타데이터(citations)를 기준으로 만든다. Claude가
+    // 직접 적은 "[참고자료]" 목록은 본문에서 제거한 뒤 제목을 다듬는 용도로만
+    // 쓴다 — 그 목록은 검색 없이 기억만으로 지어낼 수도 있기 때문에, 실제로
+    // 인용된 근거가 없는 출처는 참고자료에 넣지 않는다. 확인된 출처는 정상적인
+    // 마크다운 링크로 본문에 다시 삽입해, 글을 그대로 복사/게시해도 출처가
+    // 함께 따라가게 한다.
     const referencesResult = parseReferences(content);
     const citedSnippets = extractCitedSnippets(message.content);
-    const references = referencesResult.references.map((ref) => ({
-      ...ref,
-      snippets: citedSnippets.get(ref.url)?.snippets,
-    }));
+    const references = buildVerifiedReferences(referencesResult.references, citedSnippets);
 
     content = referencesResult.content;
     if (references.length > 0) {
