@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
 import { parseReferences } from '@/lib/parse-references';
 import { extractCitedSnippets } from '@/lib/extract-citations';
+import { extractArticleText } from '@/lib/extract-article-text';
 import { buildVerifiedReferences } from '@/lib/build-references';
 import { DEFAULT_TRUSTED_DOMAINS } from '@/lib/trusted-domains';
 import { isTrustedOrigin } from '@/lib/request-security';
@@ -106,13 +107,10 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    // With web_search enabled, message.content also carries server_tool_use /
-    // web_search_tool_result blocks alongside text — join every text block
-    // rather than assuming content[0] is text.
-    const fullContent = message.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map(block => block.text)
-      .join('');
+    // With web_search enabled, message.content is a transcript of the
+    // server-side loop — see lib/extract-article-text.ts for why the article
+    // can't just be every text block concatenated.
+    const fullContent = extractArticleText(message.content);
 
     // Extract image suggestions from content [#번호 | Type | 이미지 묘사 설명 | text : 텍스트내용]
     const imageSuggestions = parseImageSuggestions(fullContent);
