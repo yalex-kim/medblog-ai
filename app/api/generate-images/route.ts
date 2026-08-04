@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImageFromBuffer, saveImageMetadata } from '@/lib/image-storage';
-import { generateImagePrompt, parseImageType, ImageType } from '@/lib/image-prompts';
+import {
+  generateImagePrompt,
+  parseImageType,
+  deriveLocationLabel,
+  ImageType,
+  ThumbnailBranding,
+} from '@/lib/image-prompts';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getImageProvider } from '@/lib/image-providers';
 import { getSession } from '@/lib/session';
@@ -9,7 +15,7 @@ import { isTrustedOrigin } from '@/lib/request-security';
 
 export const maxDuration = 300; // 5 minutes for High quality generation
 
-const VALID_IMAGE_TYPES: ImageType[] = ['INTRO', 'MEDICAL', 'LIFESTYLE', 'WARNING', 'CTA', 'INFOGRAPHIC'];
+const VALID_IMAGE_TYPES: ImageType[] = ['INTRO', 'MEDICAL', 'LIFESTYLE', 'WARNING', 'CTA', 'INFOGRAPHIC', 'THUMBNAIL'];
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_TEXT_LENGTH = 200;
 const MAX_KEYWORDS = 5;
@@ -22,6 +28,22 @@ function isValidKeywordItem(keyword: unknown): boolean {
   if (k.text !== undefined && (typeof k.text !== 'string' || k.text.length > MAX_TEXT_LENGTH)) return false;
   if (k.type !== undefined && !VALID_IMAGE_TYPES.includes(k.type as ImageType)) return false;
   return true;
+}
+
+// THUMBNAIL cards print the real clinic name and neighbourhood on the card, so
+// they need hospital data the other image types never look at. Fetched lazily —
+// a request with no THUMBNAIL in it does not pay for the round trip.
+async function loadThumbnailBranding(hospitalId: string): Promise<ThumbnailBranding> {
+  const { data: hospital } = await supabaseAdmin
+    .from('hospitals')
+    .select('hospital_name, address')
+    .eq('id', hospitalId)
+    .single();
+
+  return {
+    hospitalName: hospital?.hospital_name || undefined,
+    location: deriveLocationLabel(hospital?.address) || undefined,
+  };
 }
 
 // Confirms the caller's session actually owns the blog post before allowing
@@ -129,7 +151,9 @@ export async function POST(request: NextRequest) {
         : parseImageType(description);
 
       // Generate typed prompt
-      const prompt = generateImagePrompt(type, topic, cleanDescription, text);
+      const branding =
+        type === 'THUMBNAIL' ? await loadThumbnailBranding(sessionData.id) : {};
+      const prompt = generateImagePrompt(type, topic, cleanDescription, text, branding);
 
       const result = await imageProvider.generateImage({
         prompt,
@@ -205,6 +229,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Fetched once for the whole batch rather than per image, since every card
+    // in a post carries the same clinic name.
+    const hasThumbnail = keywords.some(
+      (k: unknown) => typeof k === 'object' && k !== null && (k as { type?: string }).type === 'THUMBNAIL'
+    );
+    const batchBranding = hasThumbnail ? await loadThumbnailBranding(sessionData.id) : {};
+
     // Generate images for each keyword
     const imagePromises = keywords.map(async (keyword: string | {type?: string, description: string, text: string, id?: string}, idx: number) => {
       // Handle both string and object formats
@@ -219,7 +250,7 @@ export async function POST(request: NextRequest) {
         : parseImageType(visualDescription);
 
       // Generate typed prompt
-      const prompt = generateImagePrompt(type, topic, cleanDescription, textContent);
+      const prompt = generateImagePrompt(type, topic, cleanDescription, textContent, batchBranding);
 
       const result = await imageProvider.generateImage({
         prompt,

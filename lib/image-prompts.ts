@@ -9,7 +9,8 @@ export type ImageType =
   | 'LIFESTYLE'
   | 'WARNING'
   | 'CTA'
-  | 'INFOGRAPHIC';
+  | 'INFOGRAPHIC'
+  | 'THUMBNAIL';
 
 interface PromptTemplate {
   style: string;
@@ -63,7 +64,131 @@ const PROMPT_TEMPLATES: Record<ImageType, PromptTemplate> = {
     mood: 'Clear, structured, and educational tone',
     elements: 'Simple icons, numbered steps, grid layout, minimal decoration',
   },
+
+  // THUMBNAIL is built by buildThumbnailPrompt(), not from this template — the
+  // entry exists so the record stays exhaustive over ImageType.
+  THUMBNAIL: {
+    style: 'Korean blog title card (썸네일): bold typography is the subject, not a photographic scene',
+    colors: 'One soft background tone with a single saturated accent for the headline',
+    mood: 'Friendly, trustworthy, scroll-stopping',
+    elements: 'Large two-line Korean headline, small eyebrow line, short subtitle, clinic footer, decorative frame',
+  },
 };
+
+/**
+ * Layout motifs for THUMBNAIL cards. One is picked per generation so that
+ * regenerating a thumbnail produces a genuinely different design instead of the
+ * same card with reshuffled words.
+ */
+export const THUMBNAIL_LAYOUTS = [
+  'A white rounded card floating on a soft gradient background, held by a realistic metal clipboard clip at the top center. Add a few flat starburst/sparkle shapes behind the headline and a thin colored underline stroke near the bottom.',
+  'A ribbon banner across the top carrying the clinic name, the headline centered below it, a thin horizontal divider under the headline, and the subtitle beneath the divider. Small rounded corner ornaments frame the card.',
+  'A white card framed by a soft wavy/scalloped border in the accent color, with the headline dead center. Add one small flat 3D-style prop cluster (megaphone, envelope, star) tucked into a bottom corner.',
+  'A rounded off-white card on a tinted background, with flat botanical leaves and one blossom overlapping the card corners (top-left and bottom-right). Text stays centered and fully clear of the foliage.',
+  'A two-column split: a flat vector illustration of a Korean woman (and, if the topic fits, a baby) occupying one side, with the headline right-aligned on the other side. Place 2–4 rounded hashtag pills in the bottom corner opposite the illustration.',
+  'A memo-paper card taped at two corners on a plain tinted background, with a hand-drawn highlighter stroke behind part of the headline, a small checkbox line under it, and a marker-pen doodle beside the text.',
+] as const;
+
+/**
+ * Colour schemes for THUMBNAIL cards, rotated alongside the layouts.
+ */
+export const THUMBNAIL_PALETTES = [
+  'Cream and warm sand background, deep espresso-brown headline, mustard-yellow highlight accent',
+  'Pale lilac background, deep violet headline, charcoal secondary text, soft white card',
+  'Sky-blue to mint gradient background, dark forest-green headline, amber accent',
+  'Blush pink background, plum-red headline, dusty rose illustration tones',
+  'Soft mint background, charcoal headline, coral-pink accent shapes',
+  'Butter-yellow background, teal headline, warm grey secondary text',
+] as const;
+
+export interface ThumbnailBranding {
+  /** Real clinic name, rendered verbatim in the footer. Never invented. */
+  hospitalName?: string;
+  /** Neighbourhood/district label such as "풍무동" or "광진구". */
+  location?: string;
+  /** Forces a specific layout/palette pair; random when omitted. */
+  variant?: number;
+}
+
+const LOCATION_TOKEN = /([가-힣]+(?:동|구|시|읍|면))/g;
+
+/**
+ * Pulls a short neighbourhood label out of a Korean street address, the way the
+ * reference thumbnails label themselves ("풍무동, 패트라산부인과").
+ *
+ * Prefers the most specific token (동 > 구 > 시), because that is what local
+ * search traffic actually uses. Returns '' when nothing usable is present.
+ */
+export function deriveLocationLabel(address?: string | null): string {
+  if (!address) return '';
+  const tokens = address.match(LOCATION_TOKEN);
+  if (!tokens) return '';
+
+  // "서울특별시" / "경기도 고양시" are too coarse to be worth printing when a
+  // 동 or 구 is available, so rank by specificity rather than taking the first.
+  const bySuffix = (suffix: string) => tokens.find((t) => t.endsWith(suffix) && t.length > 1);
+  return bySuffix('동') || bySuffix('구') || bySuffix('읍') || bySuffix('면') || bySuffix('시') || '';
+}
+
+function buildThumbnailPrompt(
+  topic: string,
+  visualDescription: string,
+  textContent: string | undefined,
+  branding: ThumbnailBranding
+): string {
+  const variant =
+    branding.variant !== undefined
+      ? Math.abs(Math.trunc(branding.variant))
+      : Math.floor(Math.random() * THUMBNAIL_LAYOUTS.length);
+
+  const layout = THUMBNAIL_LAYOUTS[variant % THUMBNAIL_LAYOUTS.length];
+  const palette = THUMBNAIL_PALETTES[variant % THUMBNAIL_PALETTES.length];
+
+  const footerParts = [branding.location, branding.hospitalName].filter(Boolean);
+  const footerInstruction = footerParts.length
+    ? `Footer line (small, muted, bottom of the card): "${footerParts.join(', ')}". Reproduce this text exactly, character for character.`
+    : 'Do not add any clinic name or footer line — leave that area empty.';
+
+  const subtitleInstruction = textContent
+    ? `Subtitle (one or two short centred lines under the headline): "${textContent}". You may break it across two lines at a natural word boundary, but do not reword it.`
+    : 'Subtitle: write one short, natural Korean line (15–25 characters) that expands on the headline.';
+
+  return `
+KOREAN BLOG TITLE CARD (썸네일): This is a flat graphic design cover image for a Korean obstetrics and gynecology clinic blog post about "${topic}". It is a typographic poster, NOT a photograph and NOT a scene.
+
+Square 1:1 composition. Typography is the main subject and must dominate the frame.
+
+Text hierarchy, from top to bottom:
+1. Eyebrow — one small line above the headline (a qualifier, symptom, or location; roughly 5–15 characters), set in the accent colour.
+2. Headline — the key term drawn from the content below, split across EXACTLY TWO lines, in an extremely large, heavy, rounded Korean sans-serif (think 여기어때 잘난체 / G마켓 산스 Bold). It must fill most of the card's width. Colouring the two lines differently is encouraged.
+3. ${subtitleInstruction}
+4. ${footerInstruction}
+
+Content to draw the headline and eyebrow from:
+${visualDescription}
+
+Layout motif:
+${layout}
+
+Colour scheme:
+${palette}
+
+Typography and text rules:
+- All text is Korean (한글). Every character must be a real, correctly formed Hangul syllable — no invented glyphs, no broken jamo, no Latin filler, no Japanese or Chinese characters.
+- Keep the total word count low. A crowded card is a failed card: eyebrow + two headline lines + one short subtitle + one footer line, nothing more.
+- Centre-align the text block unless the layout motif explicitly calls for a side-aligned column.
+- Leave generous margins; nothing may touch or run off the card edge.
+- Decorative elements must sit behind or beside the text, never on top of it.
+
+BRANDING RULE: Do NOT invent any hospital, clinic, or company name, and do NOT draw any logo, emblem, or watermark. ${
+    footerParts.length
+      ? 'The only permitted brand text is the exact footer line given above.'
+      : 'No brand or clinic name may appear anywhere on the card.'
+  }
+
+MEDICAL ADVERTISING RULE: No superlatives or guarantees (최고, 유일, 완치, 100% and the like). Keep the tone informative and reassuring, never sensational. No nudity, no graphic or clinical imagery — this is a friendly cover image.
+`;
+}
 
 /**
  * Generates a standardized prompt for image generation based on type
@@ -71,14 +196,22 @@ const PROMPT_TEMPLATES: Record<ImageType, PromptTemplate> = {
  * @param topic - The blog post topic
  * @param visualDescription - Description of what should be in the image
  * @param textContent - Korean text to overlay on the image (optional)
+ * @param branding - Real clinic name/location, used by THUMBNAIL only
  * @returns A complete prompt string for DALL·E / GPT-Image generation
  */
 export function generateImagePrompt(
   type: ImageType,
   topic: string,
   visualDescription: string,
-  textContent?: string
+  textContent?: string,
+  branding: ThumbnailBranding = {}
 ): string {
+  // Title cards are typography, not scenes, so they get their own builder
+  // instead of being squeezed through the photographic template above.
+  if (type === 'THUMBNAIL') {
+    return buildThumbnailPrompt(topic, visualDescription, textContent, branding);
+  }
+
   const template = PROMPT_TEMPLATES[type];
 
   // Photographic types stay mostly text-free; design-oriented types may carry
@@ -150,7 +283,7 @@ export function parseImageType(description: string): {
   description: string;
 } {
   const typeMatch = description.match(
-    /^(INTRO|MEDICAL|LIFESTYLE|WARNING|CTA|INFOGRAPHIC)\|(.+)$/ // ex: "INTRO|여성의 복통"
+    /^(INTRO|MEDICAL|LIFESTYLE|WARNING|CTA|INFOGRAPHIC|THUMBNAIL)\|(.+)$/ // ex: "INTRO|여성의 복통"
   );
 
   if (typeMatch) {
