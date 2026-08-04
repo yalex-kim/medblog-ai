@@ -3,8 +3,10 @@ import {
   generateImagePrompt,
   parseImageType,
   deriveLocationLabel,
+  selectThumbnailStyle,
   THUMBNAIL_LAYOUTS,
   THUMBNAIL_PALETTES,
+  THUMBNAIL_HEADLINE_TREATMENTS,
 } from './image-prompts';
 
 describe('deriveLocationLabel', () => {
@@ -19,6 +21,35 @@ describe('deriveLocationLabel', () => {
     expect(deriveLocationLabel(null)).toBe('');
     expect(deriveLocationLabel(undefined)).toBe('');
     expect(deriveLocationLabel('123 Main Street')).toBe('');
+  });
+});
+
+describe('selectThumbnailStyle', () => {
+  it('moves the three axes independently rather than in lockstep', () => {
+    // The original bug: layout and palette shared one index, so the six layouts
+    // could only ever appear with their six matching palettes.
+    const combos = new Set<string>();
+    const total = THUMBNAIL_LAYOUTS.length * THUMBNAIL_PALETTES.length * THUMBNAIL_HEADLINE_TREATMENTS.length;
+
+    for (let variant = 0; variant < total; variant++) {
+      const { layout, palette, treatment } = selectThumbnailStyle(variant);
+      combos.add(`${layout.name}|${palette}|${treatment}`);
+    }
+
+    expect(combos.size).toBe(total);
+  });
+
+  it('changes layout first so consecutive variants never repeat a composition', () => {
+    const names = THUMBNAIL_LAYOUTS.map((_, i) => selectThumbnailStyle(i).layout.name);
+
+    expect(new Set(names).size).toBe(THUMBNAIL_LAYOUTS.length);
+  });
+
+  it('reaches every layout when rolling at random', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 500; i++) seen.add(selectThumbnailStyle().layout.name);
+
+    expect(seen.size).toBe(THUMBNAIL_LAYOUTS.length);
   });
 });
 
@@ -69,14 +100,23 @@ describe('generateImagePrompt for THUMBNAIL', () => {
     expect(prompt).toContain('생리량이 많아졌다면 꼭 확인하세요');
   });
 
-  it('gives a different layout and palette for each variant', () => {
+  it('gives every variant a distinct composition, not just distinct ornaments', () => {
     const prompts = THUMBNAIL_LAYOUTS.map((_, i) =>
       generateImagePrompt('THUMBNAIL', '자궁근종', '자궁근종 초음파', undefined, { variant: i })
     );
 
     expect(new Set(prompts).size).toBe(THUMBNAIL_LAYOUTS.length);
-    THUMBNAIL_LAYOUTS.forEach((layout, i) => expect(prompts[i]).toContain(layout));
-    THUMBNAIL_PALETTES.forEach((palette, i) => expect(prompts[i]).toContain(palette));
+    THUMBNAIL_LAYOUTS.forEach((layout, i) => {
+      expect(prompts[i]).toContain(layout.composition);
+      expect(prompts[i]).toContain(layout.decoration);
+    });
+  });
+
+  it('does not pin the card to a centred stack', () => {
+    const prompt = generateImagePrompt('THUMBNAIL', '자궁근종', '자궁근종 초음파', undefined, branding);
+
+    expect(prompt).not.toContain('Centre-align the text block');
+    expect(prompt).toContain('do not default to a centred stack');
   });
 
   it('wraps out-of-range variants instead of producing an undefined layout', () => {
@@ -85,7 +125,7 @@ describe('generateImagePrompt for THUMBNAIL', () => {
     });
 
     expect(prompt).not.toContain('undefined');
-    expect(prompt).toContain(THUMBNAIL_LAYOUTS[2]);
+    expect(prompt).toContain(THUMBNAIL_LAYOUTS[2].composition);
   });
 
   it('leaves the other types on the photographic template', () => {
