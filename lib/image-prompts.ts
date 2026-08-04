@@ -192,7 +192,7 @@ MEDICAL ADVERTISING RULE: No superlatives or guarantees (최고, 유일, 완치,
 
 /**
  * Generates a standardized prompt for image generation based on type
- * @param type - The image type (INTRO, MEDICAL, LIFESTYLE, WARNING, CTA, INFOGRAPHIC)
+ * @param type - The image type (THUMBNAIL, INTRO, MEDICAL, LIFESTYLE, WARNING, CTA, INFOGRAPHIC)
  * @param topic - The blog post topic
  * @param visualDescription - Description of what should be in the image
  * @param textContent - Korean text to overlay on the image (optional)
