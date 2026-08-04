@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ReactMarkdown from 'react-markdown';
 import Image from 'next/image';
 import { parseImageSuggestions } from '@/lib/parse-image-suggestions';
+import { ArticleBody } from '@/components/ArticleBody';
 import { ToastViewport, useToasts } from '@/components/Toast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { btnGhost, btnPrimary, btnSecondary } from '@/lib/ui';
@@ -343,6 +343,9 @@ export default function DashboardPage() {
         body: JSON.stringify({
           description: prompt.description,
           text: prompt.text || '',
+          // Without this the API can't tell INTRO from INFOGRAPHIC and falls
+          // back to MEDICAL styling for every regenerated image.
+          type: prompt.type,
           topic: currentTopic,
           index,
           blogPostId: currentPostId,
@@ -403,7 +406,7 @@ export default function DashboardPage() {
   return (
     <div className={`min-h-screen bg-paper ${isResultView ? 'lg:h-screen lg:overflow-hidden lg:flex lg:flex-col' : ''}`}>
       <header className="bg-surface shadow lg:flex-none">
-        <div className={`mx-auto px-4 py-4 flex justify-between items-center ${isResultView ? 'max-w-7xl' : 'max-w-6xl'}`}>
+        <div className={`mx-auto px-4 py-4 flex justify-between items-center ${isResultView ? 'max-w-[1600px]' : 'max-w-6xl'}`}>
           <div>
             <h1 className="text-2xl font-bold text-ink">{hospitalName || 'MedBlog AI'}</h1>
             <p className="text-sm text-ink-faint">{department}</p>
@@ -428,7 +431,7 @@ export default function DashboardPage() {
       <main
         className={`mx-auto px-4 w-full ${
           isResultView
-            ? 'max-w-7xl py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col'
+            ? 'max-w-[1600px] py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col'
             : 'max-w-6xl py-8'
         }`}
       >
@@ -603,7 +606,7 @@ export default function DashboardPage() {
                 the page scrolls as one. */}
             <div
               className={`space-y-6 lg:space-y-0 lg:grid lg:gap-6 lg:flex-1 lg:min-h-0 ${
-                imagePrompts.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_26rem]' : 'lg:grid-cols-1'
+                imagePrompts.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_36rem]' : 'lg:grid-cols-1'
               }`}
             >
               <div className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
@@ -619,22 +622,11 @@ export default function DashboardPage() {
                   // Serif at a constrained measure: this is the one place the
                   // hospital reads the article as a reader would, so awkward
                   // sentences and typos have to surface here.
-                  <div className="markdown-content font-serif max-w-[62ch] break-keep">
-                    <ReactMarkdown
-                      components={{
-                        h1: ({...props}) => <h1 className="text-[2rem] font-bold text-ink leading-snug text-balance mb-6 mt-0" {...props} />,
-                        h2: ({...props}) => <h2 className="text-2xl font-bold text-ink leading-snug text-balance mb-4 mt-10" {...props} />,
-                        h3: ({...props}) => <h3 className="text-xl font-bold text-ink mb-3 mt-7" {...props} />,
-                        p: ({...props}) => <p className="text-[1.0625rem] leading-[1.85] text-ink-soft mb-5" {...props} />,
-                        strong: ({...props}) => <strong className="font-bold text-ink" {...props} />,
-                        a: ({...props}) => <a className="text-accent underline underline-offset-2 decoration-line-strong hover:decoration-accent" target="_blank" rel="noopener noreferrer" {...props} />,
-                        ul: ({...props}) => <ul className="list-disc pl-6 my-5 space-y-2.5 text-[1.0625rem] leading-[1.85]" {...props} />,
-                        ol: ({...props}) => <ol className="list-decimal pl-6 my-5 space-y-2.5 text-[1.0625rem] leading-[1.85]" {...props} />,
-                        li: ({...props}) => <li className="text-ink-soft" {...props} />,
-                      }}
-                    >
-                      {blogResult.content}
-                    </ReactMarkdown>
+                  // Centred rather than left-aligned: the reading measure is
+                  // narrower than the column, so centring keeps the leftover
+                  // space symmetric instead of pooling it all on the right.
+                  <div className="markdown-content font-serif max-w-[62ch] mx-auto break-keep">
+                    <ArticleBody content={blogResult.content} />
                   </div>
                 )}
               </div>
@@ -687,7 +679,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {imagePrompts.map((prompt, index) => {
                       const image = generatedImages[index];
                       const isRegenerating = regeneratingIndices.has(index);
