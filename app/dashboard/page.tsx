@@ -406,7 +406,7 @@ export default function DashboardPage() {
   return (
     <div className={`min-h-screen bg-paper ${isResultView ? 'lg:h-screen lg:overflow-hidden lg:flex lg:flex-col' : ''}`}>
       <header className="bg-surface shadow lg:flex-none">
-        <div className={`mx-auto px-4 py-4 flex justify-between items-center ${isResultView ? 'max-w-[1600px]' : 'max-w-6xl'}`}>
+        <div className={`mx-auto px-4 py-4 flex justify-between items-center ${isResultView ? 'max-w-[1632px]' : 'max-w-6xl'}`}>
           <div>
             <h1 className="text-2xl font-bold text-ink">{hospitalName || 'MedBlog AI'}</h1>
             <p className="text-sm text-ink-faint">{department}</p>
@@ -431,7 +431,7 @@ export default function DashboardPage() {
       <main
         className={`mx-auto px-4 w-full ${
           isResultView
-            ? 'max-w-[1600px] py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col'
+            ? 'max-w-[1632px] py-6 lg:flex-1 lg:min-h-0 lg:flex lg:flex-col'
             : 'max-w-6xl py-8'
         }`}
       >
@@ -605,8 +605,10 @@ export default function DashboardPage() {
                 two can be read against each other. Below lg they stack and
                 the page scrolls as one. */}
             <div
-              className={`space-y-6 lg:space-y-0 lg:grid lg:gap-6 lg:flex-1 lg:min-h-0 ${
-                imagePrompts.length > 0 ? 'lg:grid-cols-[minmax(0,1fr)_36rem]' : 'lg:grid-cols-1'
+              className={`space-y-6 lg:space-y-0 lg:grid lg:gap-14 lg:flex-1 lg:min-h-0 ${
+                imagePrompts.length > 0
+                  ? 'lg:grid-cols-2'
+                  : 'lg:grid-cols-1'
               }`}
             >
               <div className="lg:min-h-0 lg:overflow-y-auto lg:pr-1">
