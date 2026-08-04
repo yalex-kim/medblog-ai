@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { keywords, topic, description, text, index, blogPostId, replaceExisting, promptId, imageProvider: providerOverride, imageQuality } = await request.json();
+    const { keywords, topic, description, text, type: requestedType, index, blogPostId, replaceExisting, promptId, imageProvider: providerOverride, imageQuality } = await request.json();
 
     if (blogPostId !== undefined && blogPostId !== null) {
       if (typeof blogPostId !== 'string' || !(await verifyBlogPostOwnership(blogPostId, sessionData.id))) {
@@ -75,6 +75,9 @@ export async function POST(request: NextRequest) {
       }
       if (text !== undefined && (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH)) {
         return NextResponse.json({ error: '이미지 텍스트가 올바르지 않습니다.' }, { status: 400 });
+      }
+      if (requestedType !== undefined && !VALID_IMAGE_TYPES.includes(requestedType as ImageType)) {
+        return NextResponse.json({ error: '이미지 타입이 올바르지 않습니다.' }, { status: 400 });
       }
 
       // If replaceExisting is true, delete old image first
@@ -117,8 +120,13 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Parse image type from description
-      const { type, description: cleanDescription } = parseImageType(description);
+      // The caller sends the type alongside the description; parseImageType is
+      // only the fallback for the legacy "TYPE|description" encoding. Without
+      // this the type was silently lost here and every individually generated
+      // image came out as MEDICAL, ignoring INTRO/CTA/INFOGRAPHIC styling.
+      const { type, description: cleanDescription } = requestedType
+        ? { type: requestedType as ImageType, description: description.trim() }
+        : parseImageType(description);
 
       // Generate typed prompt
       const prompt = generateImagePrompt(type, topic, cleanDescription, text);
