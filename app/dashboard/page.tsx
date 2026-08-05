@@ -711,6 +711,7 @@ export default function DashboardPage() {
                                     }}
                                     className="w-full mt-1 px-3 py-2 border border-line-strong rounded-lg text-sm"
                                   >
+                                    <option value="THUMBNAIL">THUMBNAIL</option>
                                     <option value="INTRO">INTRO</option>
                                     <option value="MEDICAL">MEDICAL</option>
                                     <option value="LIFESTYLE">LIFESTYLE</option>
