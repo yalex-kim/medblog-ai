@@ -81,7 +81,9 @@ Run SQL files in Supabase SQL Editor in order:
 2. `supabase-migrations/create-admins-table.sql` — `admins` table (no default account is seeded; see `ADMIN_SETUP.md`)
 3. `supabase-migrations/add-display-order.sql` — adds `display_order`, `image_type`, `prompt_id` to `blog_images`
 4. `supabase-migrations/enable-rls.sql` — enables RLS (no permissive policies) on `hospitals`, `admins`, `blog_posts` as defense-in-depth
-5. `supabase-migrations/rotate-default-admin.sql` — only needed if you deployed this app before the hardcoded default admin was removed
+5. `supabase-migrations/add-references-and-trusted-domains.sql` — adds `hospitals.trusted_domains` and `blog_posts.reference_links`; without it `/api/blog-posts` returns 500 and generated posts fail to save
+6. `supabase-migrations/fix-updated-at-function-search-path.sql` — pins `search_path` on the `updated_at` trigger function (clears the `function_search_path_mutable` linter warning)
+7. `supabase-migrations/rotate-default-admin.sql` — only needed if you deployed this app before the hardcoded default admin was removed
 
 The app uses `supabaseAdmin` (service role key) for all server-side DB operations, bypassing RLS — RLS above is a safety net in case the anon key is ever used against these tables, not the primary access control. `supabase` (anon key) is available but currently unused server-side.
 
