@@ -19,7 +19,7 @@ Vitest covers `lib/session.ts`, `lib/parse-image-suggestions.ts`, `lib/rate-limi
 
 ### Tech Stack
 - Next.js 15 (App Router) + TypeScript + Tailwind CSS v4
-- Anthropic Claude (`claude-sonnet-4-5-20250929`) for blog text generation
+- Anthropic Claude (`claude-sonnet-5-5`) for blog text generation
 - OpenAI DALL-E or Google Gemini for image generation (switchable via `IMAGE_PROVIDER` env var)
 - Supabase for database (`hospitals`, `blog_posts`, `blog_images` tables) and Storage (`blog-images` bucket)
 
