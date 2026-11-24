@@ -18,7 +18,10 @@ export const maxDuration = 300; // 5 minutes for High quality generation
 const VALID_IMAGE_TYPES: ImageType[] = ['INTRO', 'MEDICAL', 'LIFESTYLE', 'WARNING', 'CTA', 'INFOGRAPHIC', 'THUMBNAIL'];
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_TEXT_LENGTH = 200;
-const MAX_KEYWORDS = 5;
+// The blog prompt asks for 5 images, or 6 when the article runs long (a sixth
+// WARNING/LIFESTYLE image plus the CTA). Rejecting the sixth would fail the
+// whole request, so the cap matches what generate-blog can return.
+const MAX_KEYWORDS = 6;
 
 function isValidKeywordItem(keyword: unknown): boolean {
   if (typeof keyword === 'string') return keyword.length <= MAX_DESCRIPTION_LENGTH;

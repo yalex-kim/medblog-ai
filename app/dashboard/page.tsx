@@ -219,9 +219,12 @@ export default function DashboardPage() {
         if (data.blogPostId) {
           setCurrentPostId(data.blogPostId);
         }
-        // Initialize image prompts from suggestions (limit to 5)
+        // Initialize image prompts from suggestions. The parser already caps
+        // the list (5 images, 6 when the article runs long) and keeps the CTA
+        // last, so slice with the same cap rather than 5, which would drop the
+        // CTA from a 6-image post.
         const suggestions = data.imageSuggestions || [];
-        setImagePrompts(suggestions.slice(0, 5));
+        setImagePrompts(suggestions.slice(0, 6));
         setEditingPrompts(false);
         // Refresh saved posts list
         fetchSavedPosts();
@@ -281,7 +284,7 @@ export default function DashboardPage() {
   };
 
   const handleGenerateImages = async () => {
-    // Use imagePrompts (limited to 5)
+    // Use imagePrompts (capped by parseImageSuggestions: up to 6)
     if (imagePrompts.length === 0) {
       showToast('error', '이미지 프롬프트가 없습니다.');
       return;
@@ -639,7 +642,7 @@ export default function DashboardPage() {
               {imagePrompts.length > 0 && (
                 <div className="bg-accent-tint border border-line rounded-card p-6">
                   <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
-                    <h3 className="font-semibold text-accent-strong">이미지 프롬프트 ({imagePrompts.length}/5)</h3>
+                    <h3 className="font-semibold text-accent-strong">이미지 프롬프트 ({imagePrompts.length}/6)</h3>
                     {/* flex-wrap: two selects plus two buttons overflow narrow
                         viewports without it. */}
                     <div className="flex flex-wrap items-center gap-3">

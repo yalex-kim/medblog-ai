@@ -19,6 +19,7 @@ function searchResult(): Anthropic.ContentBlock {
   return {
     type: 'web_search_tool_result',
     tool_use_id: 'srvtoolu_1',
+    caller: { type: 'direct' },
     content: [],
   } as Anthropic.ContentBlock;
 }

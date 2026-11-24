@@ -93,12 +93,15 @@ export async function POST(request: NextRequest) {
 - ${hospital.department} 전문 내용으로`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5-5',
       max_tokens: 2000,
-      // Simple structured list generation — no reasoning depth needed, and
-      // thinking (on by default for this model) was pushing content past
-      // content[0] below, silently emptying the parsed topic lists.
-      thinking: { type: 'disabled' },
+      // Simple structured list generation — no reasoning depth needed. Sonnet
+      // 5.5 rejects `thinking: { type: 'disabled' }` with a 400, and omitting
+      // `thinking` turns its adaptive thinking on, whose tokens are billed and
+      // count against max_tokens (2000, sized for ten short topics). No tools
+      // are passed on this call, so between_tools means no thinking at all.
+      thinking: { type: 'between_tools' },
+      output_config: { effort: 'high' },
       messages: [{ role: 'user', content: prompt }],
     });
 
